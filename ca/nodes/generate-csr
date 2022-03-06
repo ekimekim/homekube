@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -eu
+
+NAME="${1?Name required}"
+
+jq --arg NAME "$NAME" -n '
+	{
+		"CN": "system:node:\($NAME)",
+		"key": {
+			"algo": "rsa",
+			"size": 2048
+		},
+		"names": [
+			{
+				"O": "system:nodes"
+			}
+		],
+		"hosts": [
+			$NAME
+		]
+	}
+'
