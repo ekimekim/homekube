@@ -1,4 +1,14 @@
 
+NODES := example
+
+.PHONY: all
+all: keys
+
+CSRS := $(wildcard ca/*-csr.json)
+NODEKEYS := $(addsuffix .pem,$(NODES))
+KEYS := $(CSRS:-csr.json=.pem) $(addprefix ca/nodes/,$(NODEKEYS))
+.PHONY: keys
+keys: $(KEYS)
 
 # keys are made alongside certs
 %-key.pem: %.pem
