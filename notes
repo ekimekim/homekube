@@ -1,0 +1,11 @@
+network map:
+	hosts will be on the home 192.168.42.0/24 as normal
+	services: 192.168.43.0/24
+	pods: 192.168.64.0/19
+		with each node having a /24 within that
+the tutorials i'm following are using this network map:
+	hosts: 10.240.0.0/24
+		with masters on 10.240.0.{10,11,12}
+		and workers on 10.240.0.{20,21,22} (with pod ranges 10.200.{0,1,2}.0/24 respectively)
+	pods: 10.200.0.0/16
+	services: 10.32.0.0/24

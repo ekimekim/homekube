@@ -1,0 +1,18 @@
+{
+  "CN": "api-server",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "O": "Kubernetes API Server"
+    }
+  ],
+  "hosts": [
+    "kubernetes",
+    "kubernetes.default",
+    "kubernetes.default.svc",
+    "kubernetes.default.svc.cluster.ekime.kim"
+  ]
+}
