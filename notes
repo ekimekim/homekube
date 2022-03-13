@@ -9,3 +9,8 @@ the tutorials i'm following are using this network map:
 		and workers on 10.240.0.{20,21,22} (with pod ranges 10.200.{0,1,2}.0/24 respectively)
 	pods: 10.200.0.0/16
 	services: 10.32.0.0/24
+
+better way of doing node initialization:
+	https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet-tls-bootstrapping/
+	lets you have a single long-lived bootstrap token which allows the bearer to create and get
+		signed a client cert for themselves.
