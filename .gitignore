@@ -1,2 +1,3 @@
 *.pem
 ca/nodes/*-csr.json
+*.kubeconfig
