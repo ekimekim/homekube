@@ -1,3 +1,5 @@
 *.pem
 ca/nodes/*-csr.json
 *.kubeconfig
+*.secret
+*.yaml
