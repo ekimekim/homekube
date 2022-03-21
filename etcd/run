@@ -1,0 +1,18 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
+DATA_DIR=/srv/etcd
+
+TLS_ARGS=()
+for file in api-server.pem api-server-key.pem root.pem; do
+	TLS_ARGS+=(-v "$(pwd)/../ca/$file:/$file")
+done
+
+# ALLOW_NONE_AUTHENTICATION is safe because we're using client certs
+docker run -d \
+	-e ALLOW_NONE_AUTHENTICATION=yes \
+	-v "$DATA_DIR:/mnt" \
+	-v "$(pwd)/etcd.conf.yaml:/opt/bitnami/etcd/conf/etcd.conf.yml" \
+	"${TLS_ARGS[@]}" \
+	'bitnami/etcd:3.5.2-debian-10-r38'
