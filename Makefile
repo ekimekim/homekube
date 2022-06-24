@@ -4,7 +4,7 @@ NODES := example
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: keys configs manifests
+all: keys configs manifests static-pods
 
 .PHONY: clean
 clean:
@@ -29,6 +29,10 @@ secrets: $(SECRETS)
 MANIFEST_JSONNETS := $(wildcard manifests/*.jsonnet)
 MANIFESTS := $(MANIFEST_JSONNETS:.jsonnet=.yaml)
 manifests: $(MANIFESTS)
+
+STATIC_POD_JSONNETS := $(wildcard static-pods/*.jsonnet)
+STATIC_PODS := $(STATIC_POD_JSONNETS:.jsonnet=.yaml)
+static-pods: $(STATIC_PODS)
 
 # keys are made alongside certs
 %-key.pem: %.pem
@@ -71,6 +75,11 @@ secrets/%.secret: secrets/%.sh
 MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
 manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 	jsonnet --yaml-stream -e 'function(x) if std.type(x) == "array" then x else [x]' --tla-code 'x=import "$<"' > "$@"
+
+# static pod configs. note we provide the repo dir as an ext var,
+# for bind mounts.
+static-pods/%.yaml: static-pods/%.jsonnet
+	jsonnet -V basedir=$$(pwd) "$<" > "$@"
 
 kubelet/master.yaml: kubelet/master.jsonnet
 	jsonnet -V basedir=$$(pwd) "$<" > "$@"
