@@ -68,6 +68,9 @@ secrets/%.secret: secrets/%.sh
 
 # generate manifest yamls from jsonnets
 # each generated yaml may be a single manifest or a list
-LIBSONNETS = $(wildcard manifests/*.libsonnet)
-manifests/%.yaml: manifests/%.jsonnet $(LIBSONNETS) $(SECRETS)
+MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
+manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 	jsonnet --yaml-stream -e 'function(x) if std.type(x) == "array" then x else [x]' --tla-code 'x=import "$<"' > "$@"
+
+kubelet/master.yaml: kubelet/master.jsonnet
+	jsonnet -V basedir=$$(pwd) "$<" > "$@"
