@@ -80,13 +80,9 @@ MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
 manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 	jsonnet --yaml-stream -e 'function(x) if std.type(x) == "array" then x else [x]' --tla-code 'x=import "$<"' > "$@"
 
-# static pod configs. note we provide the repo dir as an ext var,
-# for bind mounts.
+# static pod configs
 static-pods/%.yaml: static-pods/%.jsonnet
-	jsonnet -V basedir=$$(pwd) "$<" > "$@"
-
-kubelet/master.yaml: kubelet/master.jsonnet
-	jsonnet -V basedir=$$(pwd) "$<" > "$@"
+	jsonnet "$<" > "$@"
 
 PLASMON_DEPS := \
 	secrets/plasmon-password.secret secrets/ssh-key.secret \
