@@ -84,5 +84,9 @@ static-pods/%.yaml: static-pods/%.jsonnet
 kubelet/master.yaml: kubelet/master.jsonnet
 	jsonnet -V basedir=$$(pwd) "$<" > "$@"
 
-images/%.img: images/%/config.sh images/%/*
+PLASMON_DEPS := \
+	secrets/plasmon-password.secret secrets/ssh-key.secret \
+	ca/api-server.pem ca/api-server-key.pem ca/root.pem \
+	static_pods/etcd.yaml
+images/plasmon.img: images/plasmon/config.sh images/plasmon/* $(PLASMON_DEPS)
 	arch-image-builder/build "$@" "$<"

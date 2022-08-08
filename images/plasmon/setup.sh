@@ -29,3 +29,10 @@ EOF
 
 # Start sshd, dhcp and docker on boot
 systemctl enable sshd dhcpcd docker
+
+# Configure static pods
+cp \
+	/setup/ca/api-server.pem /setup/ca/api-server-key.pem \
+	/setup/ca/root.pem /setup/images/plasmon/etcd.conf.yml \
+	/etc/kubernetes/
+cp /setup/static_pods/etcd.yaml /etc/kubernetes/manifests/

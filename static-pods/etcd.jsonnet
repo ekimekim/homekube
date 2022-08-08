@@ -14,11 +14,10 @@
     // This needs to work before kube-proxy, etc, so we can't use a Service, and pod ips make things
     // difficult. Easiest way is to just directly bind to the host's interface.
     hostNetwork: true,
-    // Grab various files from the local setup
     volumes: [
       {
-        name: "files",
-        hostPath: {path: std.extVar("basedir")},
+        name: "config",
+        hostPath: {path: "/etc/kubernetes"},
       },
       {
         name: "data",
@@ -28,7 +27,7 @@
     containers: [{
       name: "etcd",
       image: "quay.io/coreos/etcd:v3.5.4",
-      command: ["etcd", "--config-file", "/etcd.conf.yml"],
+      command: ["etcd", "--config-file", "/etc/kubernetes/etcd.conf.yml"],
       env: [
         // Disable application-level auth. This is safe because we authenticate using client certs
         // and only api-server has access.
@@ -39,19 +38,11 @@
           name: "data",
           mountPath: "/mnt",
         },
-      ] + [
         {
-          name: "files",
-          subPath: file,
-          readOnly: true,
-          mountPath: "/%s" % basename(file),
-        } for file in [
-          "ca/api-server.pem",
-          "ca/api-server-key.pem",
-          "ca/root.pem",
-          "etcd.conf.yml",
-        ]
-      ]
+          name: "config",
+          mountPath: "/etc/kubernetes",
+        },
+      ],
     }],
   },
 }
