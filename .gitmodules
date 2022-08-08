@@ -1,0 +1,3 @@
+[submodule "arch-image-builder"]
+	path = arch-image-builder
+	url = git@github.com:ekimekim/arch-image-builder

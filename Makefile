@@ -83,3 +83,6 @@ static-pods/%.yaml: static-pods/%.jsonnet
 
 kubelet/master.yaml: kubelet/master.jsonnet
 	jsonnet -V basedir=$$(pwd) "$<" > "$@"
+
+images/%.img: images/%/config.sh images/%/*
+	arch-image-builder/build "$@" "$<"

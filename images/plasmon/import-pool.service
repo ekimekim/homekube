@@ -1,0 +1,9 @@
+[Unit]
+Description=Import zfs pool
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/zpool import pool
+
+[Install]
+WantedBy=multi-user.target
