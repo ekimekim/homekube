@@ -4,7 +4,7 @@ NODES := example
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: keys configs manifests static-pods
+all: keys configs manifests static-pods images
 
 .PHONY: clean
 clean:
@@ -33,6 +33,10 @@ manifests: $(MANIFESTS)
 STATIC_POD_JSONNETS := $(wildcard static-pods/*.jsonnet)
 STATIC_PODS := $(STATIC_POD_JSONNETS:.jsonnet=.yaml)
 static-pods: $(STATIC_PODS)
+
+IMAGE_DIRS := $(wildcard images/*)
+IMAGES := $(addsuffix .img,$(IMAGE_DIRS))
+images: $(IMAGES)
 
 # keys are made alongside certs
 %-key.pem: %.pem
