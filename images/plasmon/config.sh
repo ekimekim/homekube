@@ -1,8 +1,8 @@
 HOSTNAME=plasmon
-SETUP_DIR=. # repo root
+SETUP_DIR=../.. # repo root
+SETUP_EXCLUDE=../../.imageignore
 IMAGE_SIZE=4GiB
 PACKAGES=(
-	docker
 	# debugging tools
 	vim
 	python
@@ -13,5 +13,12 @@ PACKAGES=(
 	dhcpcd
 	# for zfs
 	linux-headers
+	# container runtime
+	crictl
+	containerd
+	# kubelet also pulls in other required bits like cni-plugins, socat
+	# and the nftables-based version of iptables.
+	# This also enables net.ipv4.ip_forward.
+	kubelet
 )
-SETUP_SCRIPT=images/plasmon/setup.sh
+SETUP_SCRIPT=setup.sh

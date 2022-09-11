@@ -27,12 +27,12 @@ cat >> /etc/fstab <<-EOF
 	tmpfs /var/lib/docker tmpfs size=16G,mode=0710 0 0
 EOF
 
-# Start sshd, dhcp and docker on boot
-systemctl enable sshd dhcpcd docker
+# Start services on boot
+systemctl enable sshd dhcpcd containerd kubelet
 
 # Configure static pods
 cp \
 	/setup/ca/api-server.pem /setup/ca/api-server-key.pem \
-	/setup/ca/root.pem /setup/images/plasmon/etcd.conf.yml \
+	/setup/ca/root.pem /setup/images/plasmon/etcd.conf.yaml \
 	/etc/kubernetes/
-cp /setup/static_pods/etcd.yaml /etc/kubernetes/manifests/
+cp /setup/static-pods/etcd.yaml /etc/kubernetes/manifests/

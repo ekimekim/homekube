@@ -34,7 +34,7 @@ STATIC_POD_JSONNETS := $(wildcard static-pods/*.jsonnet)
 STATIC_PODS := $(STATIC_POD_JSONNETS:.jsonnet=.yaml)
 static-pods: $(STATIC_PODS)
 
-IMAGE_DIRS := $(wildcard images/*)
+IMAGE_DIRS := $(shell find images/* -maxdepth 1 -type d)
 IMAGES := $(addsuffix .img,$(IMAGE_DIRS))
 images: $(IMAGES)
 
@@ -87,6 +87,6 @@ static-pods/%.yaml: static-pods/%.jsonnet
 PLASMON_DEPS := \
 	secrets/plasmon-password.secret secrets/ssh-key.secret \
 	ca/api-server.pem ca/api-server-key.pem ca/root.pem \
-	static_pods/etcd.yaml
+	static-pods/etcd.yaml
 images/plasmon.img: images/plasmon/config.sh images/plasmon/* $(PLASMON_DEPS)
 	arch-image-builder/build "$@" "$<"

@@ -27,7 +27,7 @@
     containers: [{
       name: "etcd",
       image: "quay.io/coreos/etcd:v3.5.4",
-      command: ["etcd", "--config-file", "/etc/kubernetes/etcd.conf.yml"],
+      command: ["etcd", "--config-file", "/etc/kubernetes/etcd.conf.yaml"],
       env: [
         // Disable application-level auth. This is safe because we authenticate using client certs
         // and only api-server has access.
