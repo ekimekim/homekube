@@ -79,3 +79,17 @@ manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 # static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
 	jsonnet "$<" > "$@"
+
+.PHONY: install-kubelet
+NODE := $(shell hostname)
+install-kubelet: ca/root.pem ca/nodes/$(NODE).pem ca/nodes/$(NODE)-key.pem kubeconfigs/nodes/$(NODE).kubeconfig files/kubelet.conf.yaml files/kubelet.env
+	install -m 644 -t /etc/kubernetes/ ca/root.pem files/kubelet.conf.yaml files/kubelet.env
+	install -m 644 ca/nodes/$(NODE).pem /etc/kubernetes/kubelet.pem
+	install -m 600 ca/nodes/$(NODE)-key.pem /etc/kubernetes/kubelet-key.pem
+	install -m 600 kubeconfigs/nodes/$(NODE).kubeconfig /etc/kubernetes/kubelet.kubeconfig
+
+.PHONY: install-master
+install-master: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/service-account.pem ca/service-account-key.pem files/etcd.yaml.conf manifests/encryption-config.yaml static-pods/etcd.yaml static-pods/api-server.yaml
+	install -m 644 -t /etc/kubernetes ca/api-server.pem ca/service-account.pem files/etcd.yaml.conf
+	install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-account-key.pem manifests/encryption-config.yaml
+	install -m 644 -t /etc/kubernetes/manifests static-pods/etcd.yaml static-pods/api-server.yaml
