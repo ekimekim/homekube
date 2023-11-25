@@ -18,3 +18,7 @@ better way of doing node initialization:
 deferred for now: API server should be HA
 	this requires a HA IP (eg. with keepalived)
 	for now will just hard-code charm for critical components (etcd, api server)
+
+
+New approach: install things in place.
+	files/HOSTNAME/ contains things to install into the filesystem

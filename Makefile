@@ -4,7 +4,7 @@ NODES := example
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: keys configs manifests static-pods images
+all: keys configs manifests static-pods
 
 .PHONY: clean
 clean:
@@ -33,10 +33,6 @@ manifests: $(MANIFESTS)
 STATIC_POD_JSONNETS := $(wildcard static-pods/*.jsonnet)
 STATIC_PODS := $(STATIC_POD_JSONNETS:.jsonnet=.yaml)
 static-pods: $(STATIC_PODS)
-
-IMAGE_DIRS := $(shell find images/* -maxdepth 1 -type d)
-IMAGES := $(addsuffix .img,$(IMAGE_DIRS))
-images: $(IMAGES)
 
 # keys are made alongside certs
 %-key.pem: %.pem
@@ -84,9 +80,10 @@ manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 static-pods/%.yaml: static-pods/%.jsonnet
 	jsonnet "$<" > "$@"
 
-PLASMON_DEPS := \
-	secrets/plasmon-password.secret secrets/ssh-key.secret \
-	ca/api-server.pem ca/api-server-key.pem ca/root.pem \
-	static-pods/etcd.yaml
-images/plasmon.img: images/plasmon/config.sh images/plasmon/* $(PLASMON_DEPS)
-	arch-image-builder/build "$@" "$<"
+# Local files for charm
+files/charm/etc/kubernetes/api-server.pem: ca/api-server.pem
+	cp "$<" "$@"
+files/charm/etc/kubernetes/api-server-key.pem: ca/api-server-key.pem
+	cp "$<" "$@"
+files/charm/etc/kubernetes/root.pem: ca/root.pem
+	cp "$<" "$@"
