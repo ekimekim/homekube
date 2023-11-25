@@ -4,7 +4,7 @@ NODES := charm
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: keys configs manifests static-pods
+all: keys kubeconfigs manifests static-pods
 
 .PHONY: clean
 clean:
@@ -16,11 +16,11 @@ KEYS := $(CSRS:-csr.json=.pem) $(addprefix ca/nodes/,$(NODEKEYS))
 .PHONY: keys
 keys: $(KEYS)
 
-CONFIGSPECS := $(wildcard config/*.jsonnet)
+CONFIGSPECS := $(wildcard kubeconfigs/*.jsonnet)
 NODECONFIGS := $(addsuffix .kubeconfig,$(NODES))
-CONFIGS := $(CONFIGSPECS:.jsonnet=.kubeconfig) $(addprefix configs/nodes/,$(NODECONFIGS))
-.PHONY: configs
-configs: $(CONFIGS)
+KUBECONFIGS := $(CONFIGSPECS:.jsonnet=.kubeconfig) $(addprefix kubeconfigs/nodes/,$(NODECONFIGS))
+.PHONY: kubeconfigs
+kubeconfigs: $(KUBECONFIGS)
 
 SECRET_GENERATORS := $(wildcard secrets/*.sh)
 SECRETS := $(SECRET_GENERATORS:.sh=.secret)
@@ -51,15 +51,15 @@ ca/nodes/%-csr.json: ca/nodes/generate-csr
 	ca/nodes/generate-csr "$*" > "$@"
 
 # generate kubeconfigs
-configs/%.kubeconfig: configs/%.jsonnet configs/kubeconfig.libsonnet ca/%.pem ca/%-key.pem
+kubeconfigs/%.kubeconfig: kubeconfigs/%.jsonnet kubeconfigs/kubeconfig.libsonnet ca/%.pem ca/%-key.pem
 	jsonnet "$<" > "$@"
 
 # this folder has no non-generated files so it needs to be created on fresh checkout
-configs/nodes:
+kubeconfigs/nodes:
 	mkdir "$@"
 
 # generate node kubeconfigs
-configs/nodes/%.kubeconfig: configs/kubeconfig.libsonnet ca/nodes/%.pem ca/nodes/%-key.pem configs/nodes
+kubeconfigs/nodes/%.kubeconfig: kubeconfigs/kubeconfig.libsonnet ca/nodes/%.pem ca/nodes/%-key.pem kubeconfigs/nodes
 	jsonnet "$<" \
 		--tla-str user="system:node:$*" \
 		--tla-code 'clientCertificate=importstr "ca/nodes/$*.pem"' \
@@ -76,7 +76,7 @@ MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
 manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 	jsonnet --yaml-stream -e 'function(x) if std.type(x) == "array" then x else [x]' --tla-code 'x=import "$<"' > "$@"
 
-# static pod configs
+# static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
 	jsonnet "$<" > "$@"
 
