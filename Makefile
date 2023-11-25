@@ -1,5 +1,5 @@
 
-NODES := example
+NODES := charm
 
 .DELETE_ON_ERROR:
 
@@ -81,6 +81,8 @@ static-pods/%.yaml: static-pods/%.jsonnet
 	jsonnet "$<" > "$@"
 
 # Local files for charm
+files/charm: files/charm/etc/kubernetes/api-server.pem files/charm/etc/kubernetes/api-server-key.pem files/charm/etc/kubernetes/root.pem
+	touch "$@"
 files/charm/etc/kubernetes/api-server.pem: ca/api-server.pem
 	cp "$<" "$@"
 files/charm/etc/kubernetes/api-server-key.pem: ca/api-server-key.pem

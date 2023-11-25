@@ -2,6 +2,8 @@
   local basename(path) =
     local parts = std.split(path, "/");
     parts[std.length(parts)-1],
+  kind: "Pod",
+  apiVersion: "v1",
   metadata: {
     namespace: "kube-system",
     name: "etcd",
@@ -21,7 +23,7 @@
       },
       {
         name: "data",
-        hostPath: "/srv/etcd",
+        hostPath: {path: "/srv/etcd"},
       },
     ],
     containers: [{
@@ -31,7 +33,7 @@
       env: [
         // Disable application-level auth. This is safe because we authenticate using client certs
         // and only api-server has access.
-        {key: "ALLOW_NONE_AUTHENTICATION", value: "yes"},
+        {name: "ALLOW_NONE_AUTHENTICATION", value: "yes"},
       ],
       volumeMounts: [
         {

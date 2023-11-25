@@ -2,7 +2,7 @@ function (
   user,
   clientCertificate,
   clientKey,
-  apiServer = "192.168.42.2:6443",
+  apiServer = "https://192.168.42.2:6443",
   rootCertificate = importstr "../ca/root.pem",
 ) {
   apiVersion: "v1",

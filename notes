@@ -22,3 +22,10 @@ deferred for now: API server should be HA
 
 New approach: install things in place.
 	files/HOSTNAME/ contains things to install into the filesystem
+	todo: move manifests/encryption-config.jsonnet as it's not a manifest
+		probably need some generic "jsonnet-processed file" directory
+		then install it to /etc/kubernetes
+	todo: also install service-account.pem and service-account-key.pem
+	then also static pods
+	also: charm.kubeconfig, charm.pem, charm-key.pem
+	deal with kubelet.yaml and kubelet.env somehow
