@@ -1,0 +1,12 @@
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+staticPodPath: "/etc/kubernetes/manifests/"
+tlsCertFile: "/etc/kubernetes/charm.pem"
+tlsPrivateKeyFile: "/etc/kubernetes/charm-key.pem"
+authentication:
+  webhook:
+    enabled: true
+  x509:
+    clientCAFile: "/etc/kubernetes/root.pem"
+podCIDR: "192.168.65.0/24" # for node ip 192.168.42.N, pod cidr is 192.168.(63+N).0/24
+resolvConf: "/etc/kubernetes/resolv.conf" # this points at cloudflare for now, todo fix

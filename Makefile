@@ -79,13 +79,3 @@ manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 # static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
 	jsonnet "$<" > "$@"
-
-# Local files for charm
-files/charm: files/charm/etc/kubernetes/api-server.pem files/charm/etc/kubernetes/api-server-key.pem files/charm/etc/kubernetes/root.pem
-	touch "$@"
-files/charm/etc/kubernetes/api-server.pem: ca/api-server.pem
-	cp "$<" "$@"
-files/charm/etc/kubernetes/api-server-key.pem: ca/api-server-key.pem
-	cp "$<" "$@"
-files/charm/etc/kubernetes/root.pem: ca/root.pem
-	cp "$<" "$@"

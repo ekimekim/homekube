@@ -3,4 +3,5 @@ ca/nodes/*-csr.json
 *.kubeconfig
 *.secret
 *.yaml
-*.img
+# Ignore the above for the top-level files/ directory, where all files are included.
+!/files/**
