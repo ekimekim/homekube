@@ -4,7 +4,7 @@ NODES := charm
 .DELETE_ON_ERROR:
 
 .PHONY: all
-all: keys kubeconfigs manifests static-pods
+all: keys kubeconfigs secrets manifests static-pods generated-files
 
 .PHONY: clean
 clean:
@@ -24,15 +24,23 @@ kubeconfigs: $(KUBECONFIGS)
 
 SECRET_GENERATORS := $(wildcard secrets/*.sh)
 SECRETS := $(SECRET_GENERATORS:.sh=.secret)
+.PHONY: secrets
 secrets: $(SECRETS)
 
 MANIFEST_JSONNETS := $(wildcard manifests/*.jsonnet)
 MANIFESTS := $(MANIFEST_JSONNETS:.jsonnet=.yaml)
+.PHONY: manifests
 manifests: $(MANIFESTS)
 
 STATIC_POD_JSONNETS := $(wildcard static-pods/*.jsonnet)
 STATIC_PODS := $(STATIC_POD_JSONNETS:.jsonnet=.yaml)
+.PHONY: static-pods
 static-pods: $(STATIC_PODS)
+
+GENERATED_FILE_JSONNETS := $(wildcard generated-files/*.jsonnet)
+GENERATED_FILES := $(GENERATED_FILE_JSONNETS:.jsonnet=.yaml)
+.PHONY: generated-files
+generated-files: $(GENERATED_FILES)
 
 # keys are made alongside certs
 %-key.pem: %.pem
@@ -78,6 +86,10 @@ manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
 
 # static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
+	jsonnet "$<" > "$@"
+
+# generated yaml files
+generated-files/%.yaml: generated-files/%.jsonnet $(SECRETS)
 	jsonnet "$<" > "$@"
 
 .PHONY: install-kubelet

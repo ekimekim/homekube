@@ -13,6 +13,7 @@ the tutorials i'm following are using this network map:
 File structure:
 	ca/ - certificate management, CSRs, certs and keys
 		nodes/ - certs for specific nodes
+	generated-files - general generated yaml files, eg. configs
 	files/ - general non-generated files, eg. configs
 	kubeconfigs/ - kubeconfig files
 		nodes/ - kubeconfigs for specific nodes
