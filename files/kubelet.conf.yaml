@@ -1,8 +1,8 @@
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 staticPodPath: "/etc/kubernetes/manifests/"
-tlsCertFile: "/etc/kubernetes/charm.pem"
-tlsPrivateKeyFile: "/etc/kubernetes/charm-key.pem"
+tlsCertFile: "/etc/kubernetes/kubelet.pem"
+tlsPrivateKeyFile: "/etc/kubernetes/kubelet-key.pem"
 authentication:
   webhook:
     enabled: true
