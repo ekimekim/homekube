@@ -123,3 +123,7 @@ install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/s
 
 .PHONY: install-master
 install-master: install-etcd install-api-server install-scheduler install-controller-manager
+
+.PHONY: apply-manifests
+apply-manifests: manifests
+	kubectl --context=xenon apply -f manifests/
