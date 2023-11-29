@@ -105,16 +105,21 @@ install-scheduler: install-kubelet kubeconfigs/kube-scheduler.kubeconfig static-
 	install -m 600 kubeconfigs/kube-scheduler.kubeconfig /etc/kubernetes/
 	install -m 644 static-pods/scheduler.yaml /etc/kubernetes/manifests
 
+.PHONY: install-controller-manager
+install-controller-manager: install-kubelet kubeconfigs/kube-controller-manager.kubeconfig static-pods/controller-manager.yaml ca/service-accounts-key.pem
+	install -m 600 -t /etc/kubernetes/ kubeconfigs/kube-controller-manager.kubeconfig ca/service-accounts-key.pem
+	install -m 644 static-pods/controller-manager.yaml /etc/kubernetes/manifests
+
 .PHONY: install-etcd
 install-etcd: install-kubelet files/etcd.yaml.conf static-pods/etcd.yaml
 	install -m 644 files/etcd.yaml.conf /etc/kubernetes
 	install -m 644 static-pods/etcd.yaml /etc/kubernetes/manifests
 
 .PHONY: install-api-server
-install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/service-account.pem ca/service-account-key.pem manifests/encryption-config.yaml static-pods/api-server.yaml
+install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/service-account.pem ca/service-accounts-key.pem manifests/encryption-config.yaml static-pods/api-server.yaml
 	install -m 644 -t /etc/kubernetes ca/api-server.pem ca/service-account.pem
-	install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-account-key.pem manifests/encryption-config.yaml
+	install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-accounts-key.pem manifests/encryption-config.yaml
 	install -m 644 -t /etc/kubernetes/manifests static-pods/api-server.yaml
 
 .PHONY: install-master
-install-master: install-etcd install-api-server install-scheduler
+install-master: install-etcd install-api-server install-scheduler install-controller-manager
