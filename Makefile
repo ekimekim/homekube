@@ -100,6 +100,11 @@ install-kubelet: ca/root.pem ca/nodes/$(NODE).pem ca/nodes/$(NODE)-key.pem kubec
 	install -m 600 ca/nodes/$(NODE)-key.pem /etc/kubernetes/kubelet-key.pem
 	install -m 600 kubeconfigs/nodes/$(NODE).kubeconfig /etc/kubernetes/kubelet.kubeconfig
 
+.PHONY: install-scheduler
+install-scheduler: install-kubelet kubeconfigs/kube-scheduler.kubeconfig static-pods/scheduler.yaml
+	install -m 600 kubeconfigs/kube-scheduler.kubeconfig /etc/kubernetes/
+	install -m 644 static-pods/scheduler.yaml /etc/kubernetes/manifests
+
 .PHONY: install-etcd
 install-etcd: install-kubelet files/etcd.yaml.conf static-pods/etcd.yaml
 	install -m 644 files/etcd.yaml.conf /etc/kubernetes
@@ -112,4 +117,4 @@ install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/s
 	install -m 644 -t /etc/kubernetes/manifests static-pods/api-server.yaml
 
 .PHONY: install-master
-install-master: install-etcd install-api-server
+install-master: install-etcd install-api-server install-scheduler
