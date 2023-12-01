@@ -2,6 +2,9 @@
 NODES := charm
 
 .DELETE_ON_ERROR:
+.ONESHELL:
+SHELL = /bin/bash
+.SHELLFLAGS = -euc
 
 .PHONY: all
 all: keys kubeconfigs secrets manifests static-pods generated-files
@@ -79,10 +82,15 @@ secrets/%.secret: secrets/%.sh
 	bash "$<" > "$@"
 
 # generate manifest yamls from jsonnets
-# each generated yaml may be a single manifest or a list
+# each generated yaml may be a list of manifests or an object where manifests are values
 MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
 manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
-	jsonnet --yaml-stream -e 'function(x) if std.type(x) == "array" then x else [x]' --tla-code 'x=import "$<"' > "$@"
+	jsonnet --yaml-stream -e '
+		function(x)
+			if std.type(x) == "array" then x
+			else if std.type(x) == "object" then std.objectValues(x)
+			else error "Expected array or object"
+	' --tla-code 'x=import "$<"' > "$@"
 
 # static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
