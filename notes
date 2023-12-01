@@ -24,3 +24,5 @@ File structure:
 deferred for now: API server should be HA
 	this requires a HA IP (eg. with keepalived)
 	for now will just hard-code charm for critical components (etcd, api server)
+
+next problem: pods are getting 192.168.43.0/24 ips, even though that's for services.
