@@ -26,3 +26,26 @@ deferred for now: API server should be HA
 	for now will just hard-code charm for critical components (etcd, api server)
 
 next problem: pods are getting 192.168.43.0/24 ips, even though that's for services.
+	This is due to containerd's CNI configuration under /etc/cni/net.d/10-k8s.conflist
+		{
+			"cniVersion": "1.0.0",
+			"name": "k8s",
+			"plugins": [
+				{
+					"type": "bridge",
+					"bridge": "k8s",
+					"isDefaultGateway": true,
+					"ipMasq": true,
+					"hairpinMode": true,
+					"ipam": {
+						"type": "host-local",
+						"subnet": "192.168.43.0/24"
+					}
+				},
+				{
+					"type": "portmap",
+					"capabilities": {"portMappings": true}
+				}
+			]
+		}
+	This is required node-level setup that I didn't talk about before(?)

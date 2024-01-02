@@ -102,11 +102,12 @@ generated-files/%.yaml: generated-files/%.jsonnet $(SECRETS)
 
 .PHONY: install-kubelet
 NODE := $(shell hostname)
-install-kubelet: ca/root.pem ca/nodes/$(NODE).pem ca/nodes/$(NODE)-key.pem kubeconfigs/nodes/$(NODE).kubeconfig files/kubelet.conf.yaml files/kubelet.env
+install-kubelet: ca/root.pem ca/nodes/$(NODE).pem ca/nodes/$(NODE)-key.pem kubeconfigs/nodes/$(NODE).kubeconfig files/kubelet.conf.yaml files/kubelet.env files/cni.conflist
 	install -m 644 -t /etc/kubernetes/ ca/root.pem files/kubelet.conf.yaml files/kubelet.env
 	install -m 644 ca/nodes/$(NODE).pem /etc/kubernetes/kubelet.pem
 	install -m 600 ca/nodes/$(NODE)-key.pem /etc/kubernetes/kubelet-key.pem
 	install -m 600 kubeconfigs/nodes/$(NODE).kubeconfig /etc/kubernetes/kubelet.kubeconfig
+	install -m 644 -D files/cni.conflist /etc/cni/net.d/10-k8s.conflist
 
 .PHONY: install-scheduler
 install-scheduler: install-kubelet kubeconfigs/kube-scheduler.kubeconfig static-pods/scheduler.yaml

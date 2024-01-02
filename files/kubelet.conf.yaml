@@ -8,7 +8,8 @@ authentication:
     enabled: true
   x509:
     clientCAFile: "/etc/kubernetes/root.pem"
-podCIDR: "192.168.65.0/24" # for node ip 192.168.42.N, pod cidr is 192.168.(63+N).0/24
+# podCIDR isn't actually managed here, it's part of containerd's CNI config
+# podCIDR: "192.168.65.0/24" # for node ip 192.168.42.N, pod cidr is 192.168.(63+N).0/24
 resolvConf: "/etc/kubernetes/resolv.conf" # this points at cloudflare for now, todo fix
 # set more relaxed hard eviction thresholds as the default for disk, 15%, is bad on large disks.
 evictionHard:

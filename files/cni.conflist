@@ -1,0 +1,21 @@
+{
+	"cniVersion": "1.0.0",
+	"name": "k8s",
+	"plugins": [
+		{
+			"type": "bridge",
+			"bridge": "k8s",
+			"isDefaultGateway": true,
+			"ipMasq": true,
+			"hairpinMode": true,
+			"ipam": {
+				"type": "host-local",
+				"subnet": "192.168.65.0/24"
+			}
+		},
+		{
+			"type": "portmap",
+			"capabilities": {"portMappings": true}
+		}
+	]
+}
