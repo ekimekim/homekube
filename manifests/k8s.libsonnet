@@ -57,6 +57,9 @@
     labels = { app: name },
   ): $.resource("v1", "ConfigMap") + $.metadata(name, namespace, labels) + { data: data },
 
+  service_account(name, namespace = "default", labels = {}):
+    $.resource("v1", "ServiceAccount") + $.metadata(name, namespace, labels),
+
   // Patches to objects of various kinds to add certain common configurations.
   mixins: {
 
