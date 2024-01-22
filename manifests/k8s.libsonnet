@@ -42,6 +42,7 @@
 
   // Patches to objects of various kinds to add certain common configurations.
   mixins: {
+
     // For deployments, configure them to only ever run one at a time.
     // This is not a guarentee but k8s won't do it intentionally.
     run_one: {
@@ -50,6 +51,17 @@
         strategy: { type: "Recreate" },
       },
     },
+
+    // For pod specs, add a hostpath volume on a specific node. This forces it to run
+    // on that node. NAME is the volume name which can then be referenced in volume mounts.
+    host_path(name, host, path): {
+      nodeName: host,
+      volumes+: [{
+        name: name,
+        hostPath: { path: path },
+      }]
+    },
+
   },
 
 }

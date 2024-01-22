@@ -24,34 +24,31 @@ local k8s = import "k8s.libsonnet";
     "config.yml": std.manifestJson(config),
   }),
 
-  deployment: k8s.deployment("registry", pod={
-    nodeName: "charm",
-    volumes: [
-      {
-        name: "data",
-        hostPath: { path: "/srv/registry" },
-      },
-      {
-        name: "config",
-        configMap: { name: "registry" },
-      },
-    ],
-    containers: [{
-      name: "registry",
-      image: "registry:2",
-      volumeMounts: [
-        {
-          name: "data",
-          mountPath: "/mnt",
-        },
+  deployment: k8s.deployment("registry",
+    pod={
+      volumes: [
         {
           name: "config",
-          subPath: "config.yml",
-          mountPath: "/etc/docker/registry/config.yml",
+          configMap: { name: "registry" },
         },
       ],
-    }],
-  }) + k8s.mixins.run_one,
+      containers: [{
+        name: "registry",
+        image: "registry:2",
+        volumeMounts: [
+          {
+            name: "data",
+            mountPath: "/mnt",
+          },
+          {
+            name: "config",
+            subPath: "config.yml",
+            mountPath: "/etc/docker/registry/config.yml",
+          },
+        ],
+      }],
+    } + k8s.mixins.host_path("data", "charm", "/srv/registry"),
+  ) + k8s.mixins.run_one,
 
   // TODO auth to prevent malicious writes that I then pull later
   // TODO service
