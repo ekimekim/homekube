@@ -33,6 +33,23 @@
     },
   },
 
+  daemonset(
+    name,
+    pod,
+    namespace = "kube-system",
+    labels = { app: name },
+  ): $.resource("apps/v1", "DaemonSet") + $.metadata(name, namespace, labels) + {
+    spec: {
+      selector: { matchLabels: labels },
+      template: {
+        metadata: {
+          labels: labels,
+        },
+        spec: pod,
+      },
+    },
+  },
+
   configmap(
     name,
     data,
