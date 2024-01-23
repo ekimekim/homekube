@@ -125,9 +125,9 @@ install-etcd: install-kubelet files/etcd.yaml.conf static-pods/etcd.yaml
 	install -m 644 static-pods/etcd.yaml /etc/kubernetes/manifests
 
 .PHONY: install-api-server
-install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/service-account.pem ca/service-accounts-key.pem manifests/encryption-config.yaml static-pods/api-server.yaml
-	install -m 644 -t /etc/kubernetes ca/api-server.pem ca/service-account.pem
-	install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-accounts-key.pem manifests/encryption-config.yaml
+install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/service-accounts.pem ca/service-accounts-key.pem files/audit-policy.yaml generated-files/encryption-config.yaml static-pods/api-server.yaml
+	install -m 644 -t /etc/kubernetes ca/api-server.pem ca/service-accounts.pem files/audit-policy.yaml
+	install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-accounts-key.pem generated-files/encryption-config.yaml
 	install -m 644 -t /etc/kubernetes/manifests static-pods/api-server.yaml
 
 .PHONY: install-master

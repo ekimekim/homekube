@@ -67,6 +67,9 @@
         tls_private_key_file: certs.key,
         // Log verbosity. This is the level used by Kubernetes the Hard Way.
         v: 2,
+        // Audit logging config. Our config records metadata (but not req/resp bodies) of all events.
+        audit_log_path: "-", // stdout
+        audit_policy_file: "/etc/kubernetes/audit-policy.yaml",
       }),
       volumeMounts: [
         {
