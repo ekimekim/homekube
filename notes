@@ -70,3 +70,7 @@ kube-proxy
 
 	In theory I should be able to use a serviceAccount when connecting, instead of having long-lived
 	kubeconfig credentials like other components do. TODO delete those kube-proxy kubeconfigs.
+
+	The service account isn't working for unknown reasons. Tried letting it pick up the token
+	automatically, tried setting it explicitly via kubeconfig.
+	kubeadm has a way of making it work, but I don't have an example to work from.
