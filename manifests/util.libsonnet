@@ -11,4 +11,11 @@
       "--%s=%s" % [key, std.toString(value)]
     for opt in std.objectFields(opts)
   ],
+
+  // Returns the singular element of a 1-element array, or else errors.
+  unwrap_single(value):
+    if std.length(value) == 1 then
+      value[0]
+    else
+      error "Expected single element but got %s: %s" % [std.length(value), value],
 }
