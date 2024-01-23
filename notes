@@ -51,26 +51,7 @@ next problem: pods are getting 192.168.43.0/24 ips, even though that's for servi
 	This is required node-level setup that I didn't talk about before(?)
 
 DNS
-	I've set up coredns, but it relies on the kubernetes api service which uses a service IP
-		This in turn means we need the service ip on the api-server certificate
 	An interesting question is how to set up pods to use it. We can't reference it by service name
 	because it's the thing that resolves service names. We have to use a hard-coded cluster IP.
 	Easiest way to do that is to pick one a-priori and state it explicitly during Service creation.
 		How do we prevent/handle this IP already being in use?
-	Also still TODO, service account and cluster role for coredns. I think it just needs read-only EndpointSlices?
-
-kube-proxy
-	We have another bootstrap issue here. kube-proxy needs to talk to the api server
-	but the api server is only exposed as a service ip, which requires kube-proxy.
-	We also can't use a headless service as that requires DNS and coredns would then have its own
-	bootstrap issue.
-	kubeadm etc solve this by having some external load balancer on the apiserver ip.
-	I should treat this the same way I treat other components like controller-manager and have it
-	connect to the apiserver node ip directly.
-
-	In theory I should be able to use a serviceAccount when connecting, instead of having long-lived
-	kubeconfig credentials like other components do. TODO delete those kube-proxy kubeconfigs.
-
-	The service account isn't working for unknown reasons. Tried letting it pick up the token
-	automatically, tried setting it explicitly via kubeconfig.
-	kubeadm has a way of making it work, but I don't have an example to work from.
