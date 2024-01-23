@@ -1,7 +1,7 @@
 local k8s = import "k8s.libsonnet";
 {
   local corefile = |||
-    . {
+    .:53 {
       # log all queries
       log
       # log errors
@@ -32,7 +32,30 @@ local k8s = import "k8s.libsonnet";
     Corefile: corefile,
   }),
 
+  service_account: k8s.service_account("coredns", namespace="kube-system"),
+  role_binding: k8s.role_binding(
+    "coredns",
+    namespace = null,
+    role = { cluster_role: "coredns" },
+    subjects = [{name: "coredns", namespace: "kube-system"}],
+  ),
+  // There is a "system:kube-dns" default cluster role, but it doesn't provide everything
+  // that coredns needs
+  role: k8s.role("coredns", namespace=null, rules=[
+    {
+      apiGroups: [""],
+      resources: ["endpoints", "services", "namespaces"],
+      verbs: ["list", "watch"],
+    },
+    {
+      apiGroups: ["discovery.k8s.io"],
+      resources: ["endpointslices"],
+      verbs: ["list", "watch"],
+    },
+  ]),
+
   deployment: k8s.deployment("coredns", namespace="kube-system", pod={
+    serviceAccount: "coredns",
     volumes: [{
       name: "config",
       configMap: { name: "coredns" },
