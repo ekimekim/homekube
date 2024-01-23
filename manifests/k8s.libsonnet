@@ -16,6 +16,23 @@ local util = import "util.libsonnet";
     },
   },
 
+  // Ports should be a map {name: port number | port spec object}
+  service(
+    name,
+    namespace = "default",
+    labels = { app: name },
+    ports = {},
+  ): $.resource("v1", "Service") + $.metadata(name, namespace, labels) + {
+    spec: {
+      selector: labels,
+      ports: [
+        local value = ports[name];
+        { name: name } + (if std.type(value) == "object" then value else { port: value })
+        for name in std.objectFields(ports)
+      ],
+    },
+  },
+
   deployment(
     name,
     pod,

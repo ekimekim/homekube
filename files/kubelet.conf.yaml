@@ -10,7 +10,9 @@ authentication:
     clientCAFile: "/etc/kubernetes/root.pem"
 # podCIDR isn't actually managed here, it's part of containerd's CNI config
 # podCIDR: "192.168.65.0/24" # for node ip 192.168.42.N, pod cidr is 192.168.(63+N).0/24
-resolvConf: "/etc/kubernetes/resolv.conf" # this points at cloudflare for now, todo fix
+clusterDomain: "xenon.ekime.kim"
+clusterDNS:
+  - "192.168.43.254" # service IP for coredns
 # set more relaxed hard eviction thresholds as the default for disk, 15%, is bad on large disks.
 evictionHard:
   "memory.available": "300Mi" # is default

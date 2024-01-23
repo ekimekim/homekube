@@ -49,9 +49,3 @@ next problem: pods are getting 192.168.43.0/24 ips, even though that's for servi
 			]
 		}
 	This is required node-level setup that I didn't talk about before(?)
-
-DNS
-	An interesting question is how to set up pods to use it. We can't reference it by service name
-	because it's the thing that resolves service names. We have to use a hard-coded cluster IP.
-	Easiest way to do that is to pick one a-priori and state it explicitly during Service creation.
-		How do we prevent/handle this IP already being in use?

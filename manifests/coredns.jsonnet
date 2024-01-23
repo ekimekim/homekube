@@ -81,4 +81,14 @@ local k8s = import "k8s.libsonnet";
       }],
     }],
   }),
+
+  service: k8s.service("coredns", namespace="kube-system", ports={
+    dns: { protocol: "UDP", port: 53 },
+    dnstcp: 53,
+  }) + {
+    spec+: {
+      // Hard-coded service IP for the dns service, which we put in kubelet's resolv.conf
+      clusterIP: "192.168.43.254",
+    },
+  },
 }
