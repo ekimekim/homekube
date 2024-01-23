@@ -52,7 +52,7 @@ next problem: pods are getting 192.168.43.0/24 ips, even though that's for servi
 
 DNS
 	I've set up coredns, but it relies on the kubernetes api service which uses a service IP
-		so I need kube-proxy working first.
+		This in turn means we need the service ip on the api-server certificate
 	An interesting question is how to set up pods to use it. We can't reference it by service name
 	because it's the thing that resolves service names. We have to use a hard-coded cluster IP.
 	Easiest way to do that is to pick one a-priori and state it explicitly during Service creation.
