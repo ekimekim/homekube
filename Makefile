@@ -84,13 +84,8 @@ secrets/%.secret: secrets/%.sh
 # generate manifest yamls from jsonnets
 # each generated yaml may be a list of manifests or an object where manifests are values
 MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
-manifests/%.yaml: manifests/%.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
-	jsonnet --yaml-stream -e '
-		function(x)
-			if std.type(x) == "array" then x
-			else if std.type(x) == "object" then std.objectValues(x)
-			else error "Expected array or object"
-	' --tla-code 'x=import "$<"' > "$@"
+manifests/%.yaml: manifests/%.jsonnet flatten-manifests.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
+	jsonnet --yaml-stream flatten-manifests.jsonnet --tla-code 'value=import "$<"' > "$@"
 
 # static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
