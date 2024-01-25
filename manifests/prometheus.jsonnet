@@ -1,15 +1,10 @@
 local k8s = import "k8s.libsonnet";
 {
-  local labelmap(from, to): {
-    action: "labelmap",
-    regex: from,
-    replacement: to,
-  },
-
   local config = {
-    global: {
-      scrape_interval: "15s",
-      evaluation_interval: "15s",
+    local labelmap(from, to) = {
+      action: "labelmap",
+      regex: from,
+      replacement: to,
     },
     local kubelet_config = {
       job_name: "kubelet",
@@ -31,6 +26,10 @@ local k8s = import "k8s.libsonnet";
         labelmap("__meta_kubernetes_node_name", "node"),
         labelmap("__meta_kubernetes_node_label_(.*)", "node_${1}"),
       ],
+    },
+    global: {
+      scrape_interval: "15s",
+      evaluation_interval: "15s",
     },
     scrape_configs: [
       // for metrics involving kubelet itself
@@ -87,4 +86,23 @@ local k8s = import "k8s.libsonnet";
       },
     ],
   },
+
+  // TODO: send postgres a HUP when this changes
+  configmap: k8s.configmap("prometheus", namespace = "monitoring", data = {
+    "prometheus.yml": std.manifestJson(config),
+  }),
+
+  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = [
+    apiGroups: [""],
+    verbs: ["get", "list", "watch"],
+    resources: [
+      // To list kubelets to scrape, and get node metadata for pods
+      "nodes",
+      // To scrape kubelet metrics
+      "nodes/metrics",
+      // To list pods to scrape
+      "pods",
+    ],
+  ]),
+
 }
