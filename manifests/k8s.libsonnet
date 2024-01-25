@@ -118,6 +118,26 @@ local util = import "util.libsonnet";
       ],
     },
 
+  sa_with_role(
+    name,
+    namespace = "default",
+    labels = {},
+    cluster_role = false,
+    rules = [],
+  ): {
+    // TODO how to make the top-level manifests code unwrap this?
+    local role_namespace = if cluster_role then null else namespace,
+    service_account: $.service_account(name, namespace, labels),
+    role: $.role(name, role_namespace, labels, rules),
+    role_binding: $.role_binding(
+      name,
+      role = { [if cluster_role then "cluster_role" else "role"]: name },
+      subjects = [{ name: name, namespace: namespace }],
+      namespace = role_namespace,
+      labels = labels,
+    ),
+  },
+
   // Patches to objects of various kinds to add certain common configurations.
   mixins: {
 

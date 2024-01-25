@@ -32,16 +32,9 @@ local k8s = import "k8s.libsonnet";
     Corefile: corefile,
   }),
 
-  service_account: k8s.service_account("coredns", namespace="kube-system"),
-  role_binding: k8s.role_binding(
-    "coredns",
-    namespace = null,
-    role = { cluster_role: "coredns" },
-    subjects = [{name: "coredns", namespace: "kube-system"}],
-  ),
   // There is a "system:kube-dns" default cluster role, but it doesn't provide everything
   // that coredns needs
-  role: k8s.role("coredns", namespace=null, rules=[
+  perms: k8s.sa_with_role("coredns", namespace = "kube-system", cluster_role = true, rules = [
     {
       apiGroups: [""],
       resources: ["endpoints", "services", "namespaces"],
