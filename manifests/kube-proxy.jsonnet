@@ -67,6 +67,8 @@ local util = import "util.libsonnet";
         cluster_cidr: "192.168.64.0/19",
         v: 2,
         kubeconfig: "/etc/kube-proxy.kubeconfig",
+        // Listen for metrics scraping on all interfaces (default is localhost only)
+        metrics_bind_address: "0.0.0.0:10249",
         // Disable system conntrack modifications
         conntrack_max_per_core: 0,
         conntrack_tcp_timeout_close_wait: 0,
@@ -87,6 +89,10 @@ local util = import "util.libsonnet";
           add: ["NET_ADMIN"],
         },
       },
+      ports: [{
+        name: "prom",
+        containerPort: 10249,
+      }],
     }]
   }),
 
