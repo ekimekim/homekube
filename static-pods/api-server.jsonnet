@@ -77,6 +77,10 @@
           mountPath: "/etc/kubernetes",
         },
       ],
+      ports: [{
+        name: "prom-system",
+        containerPort: 6443,
+      }],
     }],
   },
 }
