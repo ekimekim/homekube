@@ -6,12 +6,13 @@ local k8s = import "k8s.libsonnet";
       log
       # log errors
       errors
-      # expose prometheus metrics on :80/metrics
-      prometheus :80
-      # enables a health check endpoint on :80/health
-      health :80
-      # enables a readiness check endpoint on :80/ready
-      ready :80
+      # Note http plugins cannot share a port despite using different paths
+      # expose prometheus metrics on :8080/metrics
+      prometheus :8080
+      # enables a health check endpoint on :8081/health
+      health :8081
+      # enables a readiness check endpoint on :8082/ready
+      ready :8082
       # automatically detect corefile changes and reload the config
       reload 10s
       # on startup, attempt to detect resolve loops and die if found
@@ -59,11 +60,11 @@ local k8s = import "k8s.libsonnet";
       args: ["-conf", "/etc/Corefile"],
       ports: [{
         name: "prom",
-        containerPort: 80,
+        containerPort: 8080,
       }],
       readinessProbe: {
         httpGet: {
-          port: 80,
+          port: 8082,
           path: "/ready",
         },
       },
