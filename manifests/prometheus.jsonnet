@@ -115,18 +115,25 @@ local k8s = import "k8s.libsonnet";
     "prometheus.yml": std.manifestJson(config),
   }),
 
-  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = [{
-    apiGroups: [""],
-    verbs: ["get", "list", "watch"],
-    resources: [
-      // To list kubelets to scrape, and get node metadata for pods
-      "nodes",
-      // To scrape kubelet metrics
-      "nodes/metrics",
-      // To list pods to scrape
-      "pods",
-    ],
-  }]),
+  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = [
+    {
+      apiGroups: [""],
+      verbs: ["get", "list", "watch"],
+      resources: [
+        // To list kubelets to scrape, and get node metadata for pods
+        "nodes",
+        // To scrape kubelet metrics
+        "nodes/metrics",
+        // To list pods to scrape
+        "pods",
+      ],
+    },
+    {
+      // To scrape metrics from system components
+      nonResourceURLs: ["/metrics"],
+      verbs: ["get"],
+    },
+  ]),
 
   deployment: k8s.deployment("prometheus", namespace = "monitoring",
     pod={
