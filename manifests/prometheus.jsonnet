@@ -29,6 +29,40 @@ local k8s = import "k8s.libsonnet";
         labelmap("__meta_kubernetes_node_label_(.*)", "node_${1}"),
       ],
     },
+    // Base scrape config common to the scrape configs that use pod discovery.
+    // It saves some pod metadata as labels, and allows overriding the metric path
+    // with the prometheus.io/path annotation.
+    local pod_config = {
+      kubernetes_sd_configs: [{
+        // Make a scrape target for each port defintion of each pod
+        role: "pod",
+        attach_metadata: { node: true },
+      }],
+      relabel_configs: [
+        // If the prometheus.io/path annotation is set, replace __metrics_path__ with it.
+        {
+          action: "replace",
+          source_labels: ["__meta_kubernetes_pod_annotation_prometheus_io_path"],
+          regex: "(.+)",
+          target_label: "__metrics_path__",
+          replacement: "${1}",
+        },
+        // Record useful info as metric labels.
+        // No need to record the pod ip as it is saved in "instance".
+        // The container/pod ids aren't meaningful on their own but are useful
+        // for differentiating containers across restarts / stable-named pods across recreates.
+        // Annotations are excluded as they may change often.
+        labelmap("__meta_kubernetes_namespace", "namespace"),
+        labelmap("__meta_kubernetes_pod_name", "pod"),
+        labelmap("__meta_kubernetes_pod_label_(.+)", "${1}"),
+        labelmap("__meta_kubernetes_pod_container_name", "container"),
+        labelmap("__meta_kubernetes_pod_container_id", "container_id"),
+        labelmap("__meta_kubernetes_pod_node_name", "node"),
+        labelmap("__meta_kubernetes_pod_uid", "pod_id"),
+        labelmap("__meta_kubernetes_pod_controller_name", "controller"),
+        labelmap("__meta_kubernetes_pod_controller_kind", "controller_kind"),
+      ],
+    },
     // Actual config
     global: {
       scrape_interval: "15s",
@@ -49,42 +83,28 @@ local k8s = import "k8s.libsonnet";
       },
       // Scrape every pod on any port called "prom".
       // If present, the "prometheus.io/path" annotation sets the path (default /metrics).
-      {
+      pod_config + {
         job_name: "pods",
-        kubernetes_sd_configs: [{
-          // Make a scrape target for each port defintion of each pod
-          role: "pod",
-          attach_metadata: { node: true },
-        }],
-        relabel_configs: [
+        relabel_configs+: [
           // Only keep targets where port name == "prom"
           {
             action: "keep",
             source_labels: ["__meta_kubernetes_pod_container_port_name"],
             regex: "prom",
           },
-          // If the prometheus.io/path annotation is set, replace __metrics_path__ with it.
+        ],
+      },
+      // Special case for scraping kubernetes component pods. Scrapes pods with a port called
+      // "prom-system". Uses TLS and auths with service account.
+      pod_config + use_k8s_auth + {
+        job_name: "system-pods",
+        relabel_configs+: [
+          // Only keep targets where port name == "prom-system"
           {
-            action: "replace",
-            source_labels: ["__meta_kubernetes_pod_annotation_prometheus_io_path"],
-            regex: "(.+)",
-            target_label: "__metrics_path__",
-            replacement: "${1}",
+            action: "keep",
+            source_labels: ["__meta_kubernetes_pod_container_port_name"],
+            regex: "prom-system",
           },
-          // Record useful info as metric labels.
-          // No need to record the pod ip as it is saved in "instance".
-          // The container/pod ids aren't meaningful on their own but are useful
-          // for differentiating containers across restarts / stable-named pods across recreates.
-          // Annotations are excluded as they may change often.
-          labelmap("__meta_kubernetes_namespace", "namespace"),
-          labelmap("__meta_kubernetes_pod_name", "pod"),
-          labelmap("__meta_kubernetes_pod_label_(.+)", "${1}"),
-          labelmap("__meta_kubernetes_pod_container_name", "container"),
-          labelmap("__meta_kubernetes_pod_container_id", "container_id"),
-          labelmap("__meta_kubernetes_pod_node_name", "node"),
-          labelmap("__meta_kubernetes_pod_uid", "pod_id"),
-          labelmap("__meta_kubernetes_pod_controller_name", "controller"),
-          labelmap("__meta_kubernetes_pod_controller_kind", "controller_kind"),
         ],
       },
     ],
