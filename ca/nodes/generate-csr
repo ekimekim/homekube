@@ -6,6 +6,9 @@ NAME="${1?Name required}"
 
 jq --arg NAME "$NAME" -n '
 	{
+		charm: "192.168.42.2",
+	}[$NAME] as $ip
+	| {
 		"CN": "system:node:\($NAME)",
 		"key": {
 			"algo": "rsa",
@@ -17,7 +20,8 @@ jq --arg NAME "$NAME" -n '
 			}
 		],
 		"hosts": [
-			$NAME
-		]
+			$NAME,
+			$ip // empty
+		],
 	}
 '
