@@ -7,6 +7,9 @@ SUDO := sudo # override this to "" if sudo not desired
 SHELL = /bin/bash
 .SHELLFLAGS = -euc
 
+# The all target should generate all files (ie. execute all non-install targets).
+# As of writing, the only targets this generates that executing all install targets would not
+# is kubeconfigs/admin.kubeconfig and dependencies. That file can't easily be installed automatically.
 .PHONY: all
 all: keys kubeconfigs secrets manifests static-pods generated-files
 
@@ -116,8 +119,8 @@ install-controller-manager: install-kubelet kubeconfigs/kube-controller-manager.
 	$(SUDO) install -m 644 static-pods/controller-manager.yaml /etc/kubernetes/manifests
 
 .PHONY: install-etcd
-install-etcd: install-kubelet files/etcd.yaml.conf static-pods/etcd.yaml
-	$(SUDO) install -m 644 files/etcd.yaml.conf /etc/kubernetes
+install-etcd: install-kubelet files/etcd.conf.yaml static-pods/etcd.yaml
+	$(SUDO) install -m 644 files/etcd.conf.yaml /etc/kubernetes
 	$(SUDO) install -m 644 static-pods/etcd.yaml /etc/kubernetes/manifests
 
 .PHONY: install-api-server
