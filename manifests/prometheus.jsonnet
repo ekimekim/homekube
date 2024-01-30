@@ -142,6 +142,10 @@ local k8s = import "k8s.libsonnet";
     },
   ]),
 
+  service: k8s.service("prometheus", namespace = "monitoring", ports = {
+    http: { port: 80, targetPort: 9090 }, // TODO change prom port
+  }),
+
   deployment: k8s.deployment("prometheus", namespace = "monitoring",
     pod={
       serviceAccount: "prometheus",
