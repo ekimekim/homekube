@@ -15,6 +15,6 @@
     "kubernetes.default.svc",
     "kubernetes.default.svc.cluster.ekime.kim",
     "192.168.42.2",
-	"192.168.43.1"
+    "192.168.43.1"
   ]
 }
