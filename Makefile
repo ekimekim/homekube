@@ -1,5 +1,6 @@
 
 NODES := charm
+SUDO := sudo # override this to "" if sudo not desired
 
 .DELETE_ON_ERROR:
 .ONESHELL:
@@ -98,32 +99,32 @@ generated-files/%.yaml: generated-files/%.jsonnet $(SECRETS)
 .PHONY: install-kubelet
 NODE := $(shell hostname)
 install-kubelet: ca/root.pem ca/nodes/$(NODE).pem ca/nodes/$(NODE)-key.pem kubeconfigs/nodes/$(NODE).kubeconfig files/kubelet.conf.yaml files/kubelet.env files/cni.conflist
-	install -m 644 -t /etc/kubernetes/ ca/root.pem files/kubelet.conf.yaml files/kubelet.env
-	install -m 644 ca/nodes/$(NODE).pem /etc/kubernetes/kubelet.pem
-	install -m 600 ca/nodes/$(NODE)-key.pem /etc/kubernetes/kubelet-key.pem
-	install -m 600 kubeconfigs/nodes/$(NODE).kubeconfig /etc/kubernetes/kubelet.kubeconfig
-	install -m 644 -D files/cni.conflist /etc/cni/net.d/10-k8s.conflist
+	$(SUDO) install -m 644 -t /etc/kubernetes/ ca/root.pem files/kubelet.conf.yaml files/kubelet.env
+	$(SUDO) install -m 644 ca/nodes/$(NODE).pem /etc/kubernetes/kubelet.pem
+	$(SUDO) install -m 600 ca/nodes/$(NODE)-key.pem /etc/kubernetes/kubelet-key.pem
+	$(SUDO) install -m 600 kubeconfigs/nodes/$(NODE).kubeconfig /etc/kubernetes/kubelet.kubeconfig
+	$(SUDO) install -m 644 -D files/cni.conflist /etc/cni/net.d/10-k8s.conflist
 
 .PHONY: install-scheduler
 install-scheduler: install-kubelet kubeconfigs/kube-scheduler.kubeconfig static-pods/scheduler.yaml
-	install -m 600 kubeconfigs/kube-scheduler.kubeconfig /etc/kubernetes/
-	install -m 644 static-pods/scheduler.yaml /etc/kubernetes/manifests
+	$(SUDO) install -m 600 kubeconfigs/kube-scheduler.kubeconfig /etc/kubernetes/
+	$(SUDO) install -m 644 static-pods/scheduler.yaml /etc/kubernetes/manifests
 
 .PHONY: install-controller-manager
 install-controller-manager: install-kubelet kubeconfigs/kube-controller-manager.kubeconfig static-pods/controller-manager.yaml ca/service-accounts-key.pem
-	install -m 600 -t /etc/kubernetes/ kubeconfigs/kube-controller-manager.kubeconfig ca/service-accounts-key.pem
-	install -m 644 static-pods/controller-manager.yaml /etc/kubernetes/manifests
+	$(SUDO) install -m 600 -t /etc/kubernetes/ kubeconfigs/kube-controller-manager.kubeconfig ca/service-accounts-key.pem
+	$(SUDO) install -m 644 static-pods/controller-manager.yaml /etc/kubernetes/manifests
 
 .PHONY: install-etcd
 install-etcd: install-kubelet files/etcd.yaml.conf static-pods/etcd.yaml
-	install -m 644 files/etcd.yaml.conf /etc/kubernetes
-	install -m 644 static-pods/etcd.yaml /etc/kubernetes/manifests
+	$(SUDO) install -m 644 files/etcd.yaml.conf /etc/kubernetes
+	$(SUDO) install -m 644 static-pods/etcd.yaml /etc/kubernetes/manifests
 
 .PHONY: install-api-server
 install-api-server: install-kubelet ca/api-server.pem ca/api-server-key.pem ca/service-accounts.pem ca/service-accounts-key.pem files/audit-policy.yaml generated-files/encryption-config.yaml static-pods/api-server.yaml
-	install -m 644 -t /etc/kubernetes ca/api-server.pem ca/service-accounts.pem files/audit-policy.yaml
-	install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-accounts-key.pem generated-files/encryption-config.yaml
-	install -m 644 -t /etc/kubernetes/manifests static-pods/api-server.yaml
+	$(SUDO) install -m 644 -t /etc/kubernetes ca/api-server.pem ca/service-accounts.pem files/audit-policy.yaml
+	$(SUDO) install -m 600 -t /etc/kubernetes ca/api-server-key.pem ca/service-accounts-key.pem generated-files/encryption-config.yaml
+	$(SUDO) install -m 644 -t /etc/kubernetes/manifests static-pods/api-server.yaml
 
 .PHONY: install-master
 install-master: install-etcd install-api-server install-scheduler install-controller-manager
