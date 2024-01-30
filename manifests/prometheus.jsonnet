@@ -96,8 +96,15 @@ local k8s = import "k8s.libsonnet";
       },
       // Special case for scraping kubernetes component pods. Scrapes pods with a port called
       // "prom-system". Uses TLS and auths with service account.
+      // Because we're scraping by pod ip (not service) and the pod ip is ephemeral, it is not on the cert.
+      // Setting the correct service name in prometheus via relabel rule is not yet supported:
+      //   https://github.com/prometheus/prometheus/issues/4827
+      // Our options are a hard-coded scrape config per service (which isn't awful), or
+      // ignoring TLS verification. If an attacker is able to MitM direct-ip connections within
+      // the cluster, we have bigger problems than "they can mis-report system metrics".
       pod_config + use_k8s_auth + {
         job_name: "system-pods",
+        tls_config+: { insecure_skip_verify: true },
         relabel_configs+: [
           // Only keep targets where port name == "prom-system"
           {
