@@ -1,16 +1,15 @@
 local k8s = import "k8s.libsonnet";
 {
   local config = {
+    // Helper function for renaming labels in relabel rules
     local labelmap(from, to) = {
       action: "labelmap",
       regex: from,
       replacement: to,
     },
-    local kubelet_config = {
-      job_name: "kubelet",
-      // Use https with the cluster root CA, and our service account token for auth.
-      // Prom docs say it uses the plaintext http port by default but our kubelet doesn't
-      // seem to have one.
+    // Mixin that uses kubernetes auth when scraping.
+    // ie. Use https with the cluster root CA, and our service account token for auth.
+    local use_k8s_auth = {
       scheme: "https",
       tls_config: {
         ca_file: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
@@ -18,6 +17,9 @@ local k8s = import "k8s.libsonnet";
       authorization: {
         credentials_file: "/var/run/secrets/kubernetes.io/serviceaccount/token",
       },
+    },
+    // Base scrape config common to the scrape configs that talk to kubelet
+    local kubelet_config = use_k8s_auth + {
       // Scrape every kubelet
       kubernetes_sd_configs: [{ role: "node" }],
       relabel_configs: [
@@ -27,13 +29,14 @@ local k8s = import "k8s.libsonnet";
         labelmap("__meta_kubernetes_node_label_(.*)", "node_${1}"),
       ],
     },
+    // Actual config
     global: {
       scrape_interval: "15s",
       evaluation_interval: "15s",
     },
     scrape_configs: [
       // for metrics involving kubelet itself
-      kubelet_config,
+      kubelet_config + { job_name: "kubelet" },
       // for metrics kubelet gathers about running pods
       kubelet_config + {
         job_name: "cadvisor",
