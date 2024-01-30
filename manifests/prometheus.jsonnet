@@ -92,7 +92,7 @@ local k8s = import "k8s.libsonnet";
     "prometheus.yml": std.manifestJson(config),
   }),
 
-  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = [
+  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = [{
     apiGroups: [""],
     verbs: ["get", "list", "watch"],
     resources: [
@@ -103,6 +103,38 @@ local k8s = import "k8s.libsonnet";
       // To list pods to scrape
       "pods",
     ],
-  ]),
+  }]),
+
+  deployment: k8s.deployment("prometheus", namespace = "monitoring",
+    pod={
+      serviceAccount: "prometheus",
+      volumes: [{
+        name: "config",
+        configMap: { name: "prometheus" },
+      }],
+      containers: [{
+        name: "prometheus",
+        image: "prom/prometheus:v2.45.3",
+        args: [
+          "--storage.tsdb.retention=30d",
+          "--config.file=/etc/prometheus/prometheus.yml",
+        ],
+        volumeMounts: [
+          {
+            name: "config",
+            mountPath: "/etc/prometheus/",
+          },
+          {
+            name: "data",
+            mountPath: "/prometheus",
+          },
+        ],
+        // prom container defaults to nobody user, use root instead to avoid fs perm issues
+        securityContext: {
+          runAsUser: 0,
+        }
+      }],
+    } + k8s.mixins.host_path("data", "charm", "/srv/prometheus"),
+  ) + k8s.mixins.run_one,
 
 }
