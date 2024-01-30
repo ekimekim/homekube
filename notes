@@ -49,3 +49,17 @@ next problem: pods are getting 192.168.43.0/24 ips, even though that's for servi
 			]
 		}
 	This is required node-level setup that I didn't talk about before(?)
+
+TODO:
+	prometheus
+		prometheus can't scrape controller-manager or scheduler (403)
+		scrape itself
+	grafana
+		non-shitty grafana home.json dashboard
+		dashboards in code
+		grafana should ideally reach a point it has no state
+			auth - is there a better option than hard-coded password? probably not.
+		prom scrape
+	alertmanager
+	logging
+	refactor manifest layout to group things under namespaces
