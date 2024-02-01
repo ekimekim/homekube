@@ -34,7 +34,7 @@ SECRETS := $(SECRET_GENERATORS:.sh=.secret)
 .PHONY: secrets
 secrets: $(SECRETS)
 
-MANIFEST_JSONNETS := $(wildcard manifests/*.jsonnet)
+MANIFEST_JSONNETS := $(shell find manifests/ -type f -name '*.jsonnet')
 MANIFESTS := $(MANIFEST_JSONNETS:.jsonnet=.yaml)
 .PHONY: manifests
 manifests: $(MANIFESTS)
@@ -85,11 +85,17 @@ kubeconfigs/nodes/%.kubeconfig: kubeconfigs/kubeconfig.libsonnet ca/nodes/%.pem 
 secrets/%.secret: secrets/%.sh
 	bash "$<" > "$@"
 
-# generate manifest yamls from jsonnets
-# each generated yaml may be a list of manifests or an object where manifests are values
-MANIFEST_LIBSONNETS = $(wildcard manifests/*.libsonnet)
-manifests/%.yaml: manifests/%.jsonnet flatten-manifests.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
-	jsonnet --yaml-stream flatten-manifests.jsonnet --tla-code 'value=import "$<"' > "$@"
+# Generate manifest yamls from jsonnets
+# Note that changing a libsonnet in any directory will invalidate all jsonnets.
+# This is a very generic pattern rule, because that's the only easy way to support subdirectories.
+# Note this means any non-manifest yamls we *don't* want to generate need an explicit rule
+# with no recipe.
+MANIFEST_LIBSONNETS = $(shell find manifests/ -type f -name '*.libsonnet')
+%.yaml: %.jsonnet flatten-manifests.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
+	jsonnet --jpath manifests/ --yaml-stream flatten-manifests.jsonnet --tla-code 'value=import "$<"' > "$@"
+
+# see above, prevent over-general pattern rule from matching non-generated yaml files
+files/%.yaml:
 
 # static pod manifests
 static-pods/%.yaml: static-pods/%.jsonnet
@@ -134,4 +140,4 @@ install-master: install-etcd install-api-server install-scheduler install-contro
 
 .PHONY: apply-manifests
 apply-manifests: manifests
-	kubectl --context=xenon apply -f manifests/
+	find manifests/ -type f -name '*.yaml' -exec cat {} + | kubectl --context=xenon apply -f -
