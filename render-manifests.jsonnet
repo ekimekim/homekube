@@ -26,10 +26,13 @@ function(path, value)
       // do `metadata+: { namespace: ... }`.
       // So we explicitly replace manifest.metadata, but do it with a reverse-merge of their metadata
       // into our base.
+      // THEN we add in our extra labels.
       manifest + {
         metadata: {
           namespace: namespace,
-        } + manifest.metadata
+        } + manifest.metadata + {
+          labels: { "managed-by": "homekube" },
+        },
       }
       for manifest in flatten(value)
     ]
