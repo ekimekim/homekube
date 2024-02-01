@@ -29,7 +29,7 @@ local k8s = import "k8s.libsonnet";
     }
   |||,
 
-  configmap: k8s.configmap("coredns", namespace="kube-system", data={
+  configmap: k8s.configmap("coredns", data={
     Corefile: corefile,
   }),
 
@@ -48,7 +48,7 @@ local k8s = import "k8s.libsonnet";
     },
   ]),
 
-  deployment: k8s.deployment("coredns", namespace="kube-system", pod={
+  deployment: k8s.deployment("coredns", pod={
     serviceAccount: "coredns",
     volumes: [{
       name: "config",
@@ -76,7 +76,7 @@ local k8s = import "k8s.libsonnet";
     }],
   }),
 
-  service: k8s.service("coredns", namespace="kube-system", ports={
+  service: k8s.service("coredns", ports={
     dns: { protocol: "UDP", port: 53 },
     dnstcp: 53,
   }) + {

@@ -121,7 +121,9 @@ local util = import "util.libsonnet";
 
   sa_with_role(
     name,
-    namespace = "",
+    // Because we need to specify namespace in the Subject, we cannot use the null namspace
+    // and have it be auto-filled.
+    namespace,
     labels = {},
     cluster_role = false,
     rules = [],

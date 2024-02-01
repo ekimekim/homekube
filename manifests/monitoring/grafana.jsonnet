@@ -1,6 +1,6 @@
 local k8s = import "k8s.libsonnet";
 {
-  configmap: k8s.configmap("grafana", namespace = "monitoring", data = {
+  configmap: k8s.configmap("grafana", data = {
     "grafana.ini": std.manifestIni({
       sections: {
         analytics: {
@@ -23,11 +23,11 @@ local k8s = import "k8s.libsonnet";
     }),
   }),
 
-  service: k8s.service("grafana", namespace = "monitoring", ports = {
+  service: k8s.service("grafana", ports = {
     http: { port: 80, targetPort: 3000 }, // TODO change grafana's listen port
   }),
 
-  deployment: k8s.deployment("grafana", namespace = "monitoring",
+  deployment: k8s.deployment("grafana",
     pod = {
       volumes: [{
         name: "config",

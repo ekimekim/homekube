@@ -118,7 +118,7 @@ local k8s = import "k8s.libsonnet";
   },
 
   // TODO: send postgres a HUP when this changes
-  configmap: k8s.configmap("prometheus", namespace = "monitoring", data = {
+  configmap: k8s.configmap("prometheus", data = {
     "prometheus.yml": std.manifestJson(config),
   }),
 
@@ -142,11 +142,11 @@ local k8s = import "k8s.libsonnet";
     },
   ]),
 
-  service: k8s.service("prometheus", namespace = "monitoring", ports = {
+  service: k8s.service("prometheus", ports = {
     http: { port: 80, targetPort: 9090 }, // TODO change prom port
   }),
 
-  deployment: k8s.deployment("prometheus", namespace = "monitoring",
+  deployment: k8s.deployment("prometheus",
     pod={
       serviceAccount: "prometheus",
       volumes: [{

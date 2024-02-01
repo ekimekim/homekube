@@ -30,7 +30,7 @@ local util = import "util.libsonnet";
     "current-context": "local",
   },
 
-  configmap: k8s.configmap("kube-proxy", namespace="kube-system", data={
+  configmap: k8s.configmap("kube-proxy", data={
     "kube-proxy.kubeconfig": std.manifestJson(kubeconfig),
   }),
 
@@ -50,7 +50,7 @@ local util = import "util.libsonnet";
       }],
     },
 
-  daemonset: k8s.daemonset("kube-proxy", namespace="kube-system", pod={
+  daemonset: k8s.daemonset("kube-proxy", pod={
     // As kube-proxy manipulates iptables on the host, it needs to be in the host's
     // network namespace.
     hostNetwork: true,
