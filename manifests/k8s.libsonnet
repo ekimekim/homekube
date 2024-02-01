@@ -7,8 +7,9 @@ local util = import "util.libsonnet";
   },
 
   // Helper that sets common metadata fields.
-  // Set namespace = null to omit entirely.
-  metadata(name, namespace = "default", labels = {}): {
+  // Set namespace = null to omit entirely (which uses the default for your manifest).
+  // Set namespace = "" to explicitly indicate "not namespaced".
+  metadata(name, namespace = null, labels = {}): {
     metadata: {
       name: name,
       [if namespace != null then "namespace"]: namespace,
@@ -16,12 +17,12 @@ local util = import "util.libsonnet";
     },
   },
 
-  namespace(name): $.resource("v1", "Namespace") + $.metadata(name, namespace=null),
+  namespace(name): $.resource("v1", "Namespace") + $.metadata(name, namespace=""),
 
   // Ports should be a map {name: port number | port spec object}
   service(
     name,
-    namespace = "default",
+    namespace = null,
     labels = { app: name },
     ports = {},
   ): $.resource("v1", "Service") + $.metadata(name, namespace, labels) + {
@@ -38,7 +39,7 @@ local util = import "util.libsonnet";
   deployment(
     name,
     pod,
-    namespace = "default",
+    namespace = null,
     labels = { app: name },
     replicas = 1,
   ): $.resource("apps/v1", "Deployment") + $.metadata(name, namespace, labels) + {
@@ -57,7 +58,7 @@ local util = import "util.libsonnet";
   daemonset(
     name,
     pod,
-    namespace = "kube-system",
+    namespace = null,
     labels = { app: name },
   ): $.resource("apps/v1", "DaemonSet") + $.metadata(name, namespace, labels) + {
     spec: {
@@ -74,20 +75,20 @@ local util = import "util.libsonnet";
   configmap(
     name,
     data,
-    namespace = "default",
+    namespace = null,
     labels = { app: name },
   ): $.resource("v1", "ConfigMap") + $.metadata(name, namespace, labels) + { data: data },
 
-  service_account(name, namespace = "default", labels = {}):
+  service_account(name, namespace = null, labels = {}):
     $.resource("v1", "ServiceAccount") + $.metadata(name, namespace, labels),
 
-  // Role or ClusterRole (for the latter, set namespace = null).
-  role(name, namespace = "default", labels = {}, rules = []):
-    $.resource("rbac.authorization.k8s.io/v1", if namespace == null then "ClusterRole" else "Role")
+  // Role or ClusterRole (for the latter, set namespace = "").
+  role(name, namespace = null, labels = {}, rules = []):
+    $.resource("rbac.authorization.k8s.io/v1", if namespace == "" then "ClusterRole" else "Role")
     + $.metadata(name, namespace, labels)
     + { rules: rules },
 
-  // RoleBinding or ClusterRoleBinding (for the latter, set namespace = null)
+  // RoleBinding or ClusterRoleBinding (for the latter, set namespace = "")
   role_binding(
     name,
     role, // one of { role: NAME } or { cluster_role: NAME }
@@ -96,10 +97,10 @@ local util = import "util.libsonnet";
     //   { name, namespace } - a service account in a specific namespace
     //   { kind: "User" | "Group", name } - a user or group
     subjects,
-    namespace = "default",
+    namespace = null,
     labels = {},
   ):
-    $.resource("rbac.authorization.k8s.io/v1", if namespace == null then "ClusterRoleBinding" else "RoleBinding")
+    $.resource("rbac.authorization.k8s.io/v1", if namespace == "" then "ClusterRoleBinding" else "RoleBinding")
     + $.metadata(name, namespace, labels)
     + {
       roleRef: {
@@ -120,13 +121,12 @@ local util = import "util.libsonnet";
 
   sa_with_role(
     name,
-    namespace = "default",
+    namespace = "",
     labels = {},
     cluster_role = false,
     rules = [],
   ): {
-    // TODO how to make the top-level manifests code unwrap this?
-    local role_namespace = if cluster_role then null else namespace,
+    local role_namespace = if cluster_role then "" else namespace,
     service_account: $.service_account(name, namespace, labels),
     role: $.role(name, role_namespace, labels, rules),
     role_binding: $.role_binding(

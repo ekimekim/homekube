@@ -91,8 +91,8 @@ secrets/%.secret: secrets/%.sh
 # Note this means any non-manifest yamls we *don't* want to generate need an explicit rule
 # with no recipe.
 MANIFEST_LIBSONNETS = $(shell find manifests/ -type f -name '*.libsonnet')
-%.yaml: %.jsonnet flatten-manifests.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
-	jsonnet --jpath manifests/ --yaml-stream flatten-manifests.jsonnet --tla-code 'value=import "$<"' > "$@"
+%.yaml: %.jsonnet render-manifests.jsonnet $(MANIFEST_LIBSONNETS) $(SECRETS)
+	jsonnet --jpath manifests/ --yaml-stream render-manifests.jsonnet --tla-str 'path=$<' --tla-code 'value=import "$<"' > "$@"
 
 # see above, prevent over-general pattern rule from matching non-generated yaml files
 files/%.yaml:
