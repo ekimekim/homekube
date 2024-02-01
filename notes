@@ -62,4 +62,3 @@ TODO:
 		prom scrape
 	alertmanager
 	logging
-	refactor manifest layout to group things under namespaces
