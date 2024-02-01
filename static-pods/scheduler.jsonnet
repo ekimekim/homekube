@@ -28,6 +28,12 @@
       command: ["kube-scheduler"],
       args: opts_to_args({
         kubeconfig: "/etc/kubernetes/kube-scheduler.kubeconfig",
+        // These two extra args are required to defer authn/authz to the kube api.
+        // Without them, all requests are considered anonymous/rejected.
+        // It's possible for them to be seperate credentials but the existing credentials are
+        // more powerful anyway and I can't see any way least-privilege access is helpful here.
+        authentication_kubeconfig: self.kubeconfig,
+        authorization_kubeconfig: self.kubeconfig,
         // Log verbosity. This is the level used by Kubernetes the Hard Way.
         v: 2,
       }),
