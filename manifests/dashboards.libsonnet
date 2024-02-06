@@ -35,11 +35,17 @@ Panel:
     custom: Required. An opaque object that will be merged into the panel JSON.
 
 */
+local util = import "util.libsonnet";
+
 {
   dashboard(raw_args):
     local args = {
       name: error "Name is required",
-      uid: args.name, // TODO slugify
+      uid: util.replaceNonMatching(
+        std.asciiLower(args.name),
+        "-",
+        function(c) c >= "a" && c <= "z",
+      ),
       time_range: "1h",
       refresh: "15s",
       timepicker: {},
@@ -51,9 +57,9 @@ Panel:
       version: 1,
 
       title: args.name,
-      uid: args.uid,
+      [if args.uid != null then "uid"]: args.uid,
 
-      //annotations: {list: []},
+      annotations: {list: []},
       //links: [],
       //tags: [],
       //templating: [],

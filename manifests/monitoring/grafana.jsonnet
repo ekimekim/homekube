@@ -33,6 +33,8 @@ local dashboards = import "dashboards.libsonnet";
     }),
     "home.yaml": std.manifestJson(dashboards.dashboard({
       name: "Home",
+      // home dashboard needs to not have a uid, or grafana gets errors trying to read annotations
+      uid: null,
       refresh: null,
       timepicker: {hidden: true},
       rows: [
@@ -48,7 +50,8 @@ local dashboards = import "dashboards.libsonnet";
                 options: {
                   // There's no way to show all dashboards, so we emulate it with a search
                   // for "anything" with a large max items.
-                  search: true,
+                  showStarred: false,
+                  showSearch: true,
                   query: "",
                   maxItems: 1000,
                 },
@@ -102,6 +105,11 @@ local dashboards = import "dashboards.libsonnet";
             name: "config",
             subPath: "dashboards.yaml",
             mountPath: "/etc/grafana/provisioning/dashboards/dashboards.yaml",
+          },
+          {
+            name: "config",
+            subPath: "home.yaml",
+            mountPath: "/usr/share/grafana/public/dashboards/home.json",
           },
           {
             name: "dashboards",
