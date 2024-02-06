@@ -1,4 +1,5 @@
 local k8s = import "k8s.libsonnet";
+local dashboards = import "dashboards.libsonnet";
 {
   configmap: k8s.configmap("grafana", data = {
     "grafana.ini": std.manifestIni({
@@ -21,6 +22,46 @@ local k8s = import "k8s.libsonnet";
         isDefault: true,
       }],
     }),
+    "dashboards.yaml": std.manifestJson({
+      apiVersion: 1,
+      providers: [{
+        name: "dashboards",
+        options: {
+          path: "/etc/grafana/dashboards",
+        },
+      }],
+    }),
+    "home.yaml": std.manifestJson(dashboards.dashboard({
+      name: "Home",
+      refresh: null,
+      timepicker: {hidden: true},
+      rows: [
+        // A single row, the full screen height
+        {
+          height: 24,
+          panels: [
+            // A single panel, the full screen width
+            {
+              name: "Dashboards",
+              custom: {
+                type: "dashlist",
+                options: {
+                  // There's no way to show all dashboards, so we emulate it with a search
+                  // for "anything" with a large max items.
+                  search: true,
+                  query: "",
+                  maxItems: 1000,
+                },
+              },
+            },
+          ],
+        },
+      ],
+    })),
+  }),
+
+  dashboards: k8s.configmap("grafana-dashboards", data = {
+    // TODO
   }),
 
   service: k8s.service("grafana", ports = {
@@ -29,10 +70,16 @@ local k8s = import "k8s.libsonnet";
 
   deployment: k8s.deployment("grafana",
     pod = {
-      volumes: [{
-        name: "config",
-        configMap: { name: "grafana" },
-      }],
+      volumes: [
+        {
+          name: "config",
+          configMap: { name: "grafana" },
+        },
+        {
+          name: "dashboards",
+          configMap: { name: "grafana-dashboards" },
+        },
+      ],
       containers: [{
         name: "grafana",
         image: "grafana/grafana:10.3.1",
@@ -50,6 +97,15 @@ local k8s = import "k8s.libsonnet";
             name: "config",
             subPath: "datasources.yaml",
             mountPath: "/etc/grafana/provisioning/datasources/datasources.yaml",
+          },
+          {
+            name: "config",
+            subPath: "dashboards.yaml",
+            mountPath: "/etc/grafana/provisioning/dashboards/dashboards.yaml",
+          },
+          {
+            name: "dashboards",
+            mountPath: "/etc/grafana/dashboards",
           },
         ],
         securityContext: {
