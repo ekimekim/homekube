@@ -65,6 +65,27 @@ local dashboards = import "dashboards.libsonnet";
 
   dashboards: k8s.configmap("grafana-dashboards", data = {
     // TODO
+    "test.json": std.manifestJson(dashboards.dashboard({
+      name: "Test",
+      rows: [
+        [
+          {
+            name: "Container CPU usage",
+            tooltip: "A test of the tooltip field",
+            axis: {
+              units: dashboards.units.percent,
+            },
+            series: {
+              "{{namespace}} {{pod}} {{container}}": |||
+                sum by (namespace, pod, container) (
+                  rate(container_cpu_usage_seconds_total{container!=""}[1m])
+                )
+              |||,
+            },
+          },
+        ],
+      ],
+    }))
   }),
 
   service: k8s.service("grafana", ports = {

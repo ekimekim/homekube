@@ -31,6 +31,28 @@ Panel:
     width: number, width of panel. Default is to evenly divide row width
       between all panels in row without an explicit width. So eg. a row with 3 panels
       where one sets width: 12, the other two would default to 6.
+  Options for time series panels:
+    series: Required. Map from series name to query.
+    datasource: The name of the datasource to use, default "prometheus".
+    axis:
+      units: string, what units the values are in
+        You should use values from dashboards.units.
+      label: string, the axis label
+      log: If not given, makes a linear axis. If given:
+        base: Required. The log base shown in the axis. Must(?) be 2 or 10.
+        threshold: If given, values within this range of 0 will be linear instead.
+          This allows values which get near or pass through 0.
+      min: The lowest value to show on the axis. Set to null to use the lowest shown value.
+        Defaults to 0.
+      max: The highest value to show on the axis. Defaults to highest shown value.
+      stack: Set true to make a stacked graph. Set "percent" to make a 100%-stack graph.
+      style: One of "line", "bars", or "points", default "line".
+    legend: TODO (always hidden for now)
+    hover: one of:
+      "hidden": No values shown on hover
+      "single": Only the series hovered over is shown
+      "desc": Default. All series are shown, sorted by value decending.
+      "asc": All series are shown, sorted by value ascending.
   Options for custom panels:
     custom: Required. An opaque object that will be merged into the panel JSON.
 
@@ -38,6 +60,14 @@ Panel:
 local util = import "util.libsonnet";
 
 {
+  units: {
+    percent: "percentunit",
+    bytes: "bytes",
+    byte_rate: "binBps",
+    time_ago: "dateTimeFromNow",
+    time: "dtdurations",
+  },
+
   dashboard(raw_args):
     local args = {
       name: error "Name is required",
@@ -143,8 +173,85 @@ local util = import "util.libsonnet";
       ).panels,
     },
 
-  panel(args): // TODO for non-custom
+  panel(raw_args):
+    local args = {
+      name: error "Panel name is required",
+      tooltip: null,
+    } + raw_args;
     {
       title: args.name,
-    } + args.custom,
+      [if args.tooltip != null then "description"]: args.tooltip,
+    } +
+    if std.objectHas(args, "custom") then args.custom else
+    if std.objectHas(args, "series") then $.timeseries_panel(args) else
+    error "Cannot determine panel type",
+
+  timeseries_panel(raw_args):
+    local args = {
+      axis: {},
+      hover: "hidden",
+      datasource: "prometheus",
+    } + raw_args;
+    local axis = {
+      units: "short",
+      label: "",
+      log: null,
+      min: 0,
+      max: null,
+      stack: null,
+      style: "line",
+    } + args.axis;
+    local datasource = {
+      type: "prometheus",
+      uid: args.datasource,
+    };
+    {
+      type: "timeseries",
+      datasource: datasource,
+      targets: std.mapWithIndex(
+        function(index, item) {
+          editorMode: "code",
+          instant: false,
+          range: true,
+          datasource: datasource,
+          expr: item.value,
+          legendFormat: item.key,
+          // The refId needs to be "A" for the first one, then "B", etc...
+          refId:
+            if index >= 26 then error "This many series not supported"
+            else std.char(std.codepoint("A") + index),
+        },
+        std.objectKeysValues(args.series)
+      ),
+      options: {
+        legend: {
+          showLegend: false,
+        },
+        tooltip: {
+          hidden: { mode: "none" },
+          single: { mode: "single" },
+          desc: { mode: "multi", sort: "desc" },
+          asc: { mode: "multi", sort: "asc" },
+        }[args.hover],
+      },
+      fieldConfig: {
+        defaults: {
+          unit: axis.units,
+          [if axis.min != "null" then "min"]: axis.min,
+          [if axis.max != "null" then "max"]: axis.max,
+          custom: {
+            axisLabel: axis.label,
+            drawStyle: axis.style,
+            fillOpacity: if axis.stack != null then 40 else 0,
+            stacking: {
+              group: "A",
+              mode:
+                if axis.stack == null then "none"
+                else if axis.stack == true then "normal"
+                else axis.stack
+            },
+          },
+        },
+      },
+    },
 }
