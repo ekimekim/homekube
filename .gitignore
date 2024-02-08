@@ -4,5 +4,6 @@ ca/nodes/*-csr.json
 *.secret
 *.yaml
 *.d
+manifests/monitoring/dashboards.libsonnet
 # Ignore the above for the top-level files/ directory, where all files are included.
 !/files/**
