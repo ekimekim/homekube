@@ -1,5 +1,5 @@
 local k8s = import "k8s.libsonnet";
-local dashboards = import "dashboards.libsonnet";
+local grafana = import "grafana.libsonnet";
 {
   configmap: k8s.configmap("grafana", data = {
     "grafana.ini": std.manifestIni({
@@ -31,7 +31,7 @@ local dashboards = import "dashboards.libsonnet";
         },
       }],
     }),
-    "home.yaml": std.manifestJson(dashboards.dashboard({
+    "home.yaml": std.manifestJson(grafana.dashboard({
       name: "Home",
       // home dashboard needs to not have a uid, or grafana gets errors trying to read annotations
       uid: null,
@@ -65,7 +65,7 @@ local dashboards = import "dashboards.libsonnet";
 
   dashboards: k8s.configmap("grafana-dashboards", data = {
     // TODO
-    "test.json": std.manifestJson(dashboards.dashboard({
+    "test.json": std.manifestJson(grafana.dashboard({
       name: "Test",
       rows: [
         [
@@ -73,7 +73,7 @@ local dashboards = import "dashboards.libsonnet";
             name: "Container CPU usage",
             tooltip: "A test of the tooltip field",
             axis: {
-              units: dashboards.units.percent,
+              units: grafana.units.percent,
             },
             series: {
               "{{namespace}} {{pod}} {{container}}": |||

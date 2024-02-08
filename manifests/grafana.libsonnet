@@ -36,7 +36,7 @@ Panel:
     datasource: The name of the datasource to use, default "prometheus".
     axis:
       units: string, what units the values are in
-        You should use values from dashboards.units.
+        You should use values from grafana.units.
       label: string, the axis label
       log: If not given, makes a linear axis. If given:
         base: Required. The log base shown in the axis. Must(?) be 2 or 10.
