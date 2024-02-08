@@ -4,7 +4,9 @@
 SHELL = /bin/bash
 .SHELLFLAGS = -euc
 
-JSONNETS := $(shell find -type f -name '*.jsonnet' -not -name manifests.jsonnet)
+# *.jsonnet and */*.jsonnet, except manifests.jsonnet
+JSONNETS := $(wildcard *.jsonnet) $(wildcard */*.jsonnet)
+JSONNETS := $(filter-out manifests.jsonnet, $(JSONNETS))
 YAMLS := $(JSONNETS:.jsonnet=.yaml)
 DEPS := $(JSONNETS:.jsonnet=.d)
 
