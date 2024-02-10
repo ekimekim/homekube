@@ -67,6 +67,33 @@ local grafana = import "grafana.libsonnet";
     // TODO
     "test.json": std.manifestJson(grafana.dashboard({
       name: "Test",
+      variables: [
+        {
+          name: "text",
+          textbox: true,
+        },
+        {
+          name: "que",
+          multi: true,
+          query: "label_values(up, namespace)",
+        },
+        {
+          name: "mylist",
+          label: "My List",
+          values: [
+            "foo",
+            "bar",
+            "baz",
+          ],
+        },
+        {
+          name: "myobj",
+          values: {
+            foo: "phew",
+            bar: "bahre",
+          }
+        },
+      ],
       rows: [
         [
           {

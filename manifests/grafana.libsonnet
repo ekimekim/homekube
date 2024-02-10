@@ -11,10 +11,38 @@ Dashboard:
   timepicker: Advanced options for timepicker, such as available presets, or hiding the picker.
   tags: TODO.
   links: TODO.
-  variables: TODO.
+  variables: A list of Variable, default [].
   rows: A list of Row, default [].
     Will be in the first part of the dashboard (before any sections)
   sections: A list of Section, default [].
+
+Variable:
+  Options common to all variable types:
+    name: string, required. The identifier used to refer to it in queries
+    label: string. The name shown in the UI (unless display is not "full").
+      Defaults to name.
+    tooltip: string, optional tooltip to show on the variable.
+    value: Default value for variable. One of:
+      null or not given: Use grafana's default, which is "all" if available,
+        or the first option otherwise.
+      string: Value that is selected. Multi must be false.
+      list of string: List of values that are selected. Multi must be true.
+  Options common to query and custom variables:
+    multi: Boolean, default false. If true, allows selecting multiple options at once.
+    all: string or null. If null, no "All" option is provided. If a string, this is used
+      as the "custom all value". The default is null if multi is false, or ".*" if multi is true.
+  Options for query variables:
+    query: string, required. The prometheus query to use. Generally should be of the form:
+      label_values(METRIC, LABEL)
+    datasource: The name of the datasource to use, default "prometheus".
+    regex: Optional regex that filters the results to only the matching entries
+  Options for custom variables:
+    values: required. Possible values for the variable. One of:
+      List of string: A list of possible values, in order.
+      Object: Map from labels (shown in the drop down) to values (what gets substituted), unordered.
+      List of { label, value }: Ordered version of the object.
+  Options for textbox variables:
+    textbox: true, required. Indicates this is a textbox variable.
 
 Section:
   name: string, required. Section header.
@@ -79,6 +107,7 @@ local util = import "util.libsonnet";
       time_range: "1h",
       refresh: "15s",
       timepicker: {},
+      variables: [],
       rows: [],
       sections: [],
     } + raw_args;
@@ -100,6 +129,10 @@ local util = import "util.libsonnet";
         to: "now",
       },
       timepicker: args.timepicker,
+
+      templating: {
+        list: std.map($.variable, args.variables),
+      },
 
       // In grafana, sections are modeled as a kind of panel that implicitly puts all panels
       // between it and the next section (or the end) inside it. So we need to flatten sections
@@ -237,8 +270,8 @@ local util = import "util.libsonnet";
       fieldConfig: {
         defaults: {
           unit: axis.units,
-          [if axis.min != "null" then "min"]: axis.min,
-          [if axis.max != "null" then "max"]: axis.max,
+          [if axis.min != null then "min"]: axis.min,
+          [if axis.max != null then "max"]: axis.max,
           custom: {
             axisLabel: axis.label,
             drawStyle: axis.style,
@@ -254,4 +287,69 @@ local util = import "util.libsonnet";
         },
       },
     },
+
+  variable(raw_args):
+    local args = {
+      name: error "Name is required",
+      label: self.name,
+      tooltip: null,
+      value: null,
+      multi: false,
+      all: if self.multi then ".*" else null,
+    } + raw_args;
+    local multi_options = {
+      multi: args.multi,
+      includeAll: args.all != null,
+      [if args.all != null then "allValue"]: args.all,
+    };
+    {
+      name: args.name,
+      label: args.label,
+      [if args.tooltip != null then "description"]: args.tooltip,
+      [if args.value != null then "current"]: {
+        text: args.value,
+        value: args.value,
+      },
+      hide: 0, // show labels and values
+      skipUrlSync: false,
+    } +
+    if std.objectHas(args, "query") then multi_options + $.query_variable(args)
+    else if std.objectHas(args, "values") then multi_options + $.custom_variable(args)
+    else if std.objectHas(args, "textbox") then { type: "textbox" }
+    else error "Cannot determine variable type",
+
+  query_variable(args): {
+    type: "query",
+    sort: 1, // ascending
+    refresh: 2, // refresh on time range change (most often)
+    regex: std.get(args, "regex", ""),
+    datasource: {
+      type: "prometheus",
+      uid: std.get(args, "datasource", "prometheus"),
+    },
+    definition: args.query,
+    query: {
+      qryType: 5,
+      refId: "PrometheusVariableQueryEditor-VariableQuery",
+      query: args.query,
+    },
+  },
+
+  custom_variable(args): {
+    type: "custom",
+    options: [
+      {
+        text: if std.type(item) == "string" then item else item.label,
+        value: if std.type(item) == "string" then item else item.value,
+      }
+      for item in
+        if std.type(args.values) == "array" then args.values else [
+          { label: item.key, value: item.value }
+          for item in std.objectKeysValues(args.values)
+        ]
+    ],
+    # Experimentally, custom variables don't tolerate a missing "current" the way others do.
+    # Instead, default to the first option in the list.
+    [if args.value == null then "current"]: self.options[0],
+  },
 }

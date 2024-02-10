@@ -1,4 +1,7 @@
 
+# Standard "sane make" options
+MAKEFLAGS += --no-builtin-rules
+.SUFFIXES:
 .DELETE_ON_ERROR:
 .ONESHELL:
 SHELL = /bin/bash

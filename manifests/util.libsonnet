@@ -24,4 +24,8 @@
     if matcher(c) then c else replacement
     for c in std.stringChars(string)
   ]),
+
+  // Helper around std.trace that prints "{name} = {value}" and returns value.
+  debug(name, value):
+    std.trace("%s = %s" % [name, value], value),
 }
