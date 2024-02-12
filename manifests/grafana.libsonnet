@@ -32,8 +32,8 @@ Variable:
     all: string or null. If null, no "All" option is provided. If a string, this is used
       as the "custom all value". The default is null if multi is false, or ".*" if multi is true.
   Options for query variables:
-    query: string, required. The prometheus query to use. Generally should be of the form:
-      label_values(METRIC, LABEL)
+    query: string, required. A single-item map from a label to a metric with that label.
+      The variable can take values of that label.
     datasource: The name of the datasource to use, default "prometheus".
     regex: Optional regex that filters the results to only the matching entries
   Options for custom variables:
@@ -324,11 +324,16 @@ local util = import "util.libsonnet";
       type: "prometheus",
       uid: std.get(args, "datasource", "prometheus"),
     },
-    definition: args.query,
+    local query =
+      if std.length(args.query) != 1 then error "Query must be a 1-item map"
+      else
+        local item = std.objectKeysValues(args.query)[0];
+        "label_values(%(value)s,%(key)s)" % item,
+    definition: query,
     query: {
       qryType: 5,
       refId: "PrometheusVariableQueryEditor-VariableQuery",
-      query: args.query,
+      query: query,
     },
   },
 
