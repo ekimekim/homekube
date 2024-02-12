@@ -37,10 +37,7 @@ Variable:
     datasource: The name of the datasource to use, default "prometheus".
     regex: Optional regex that filters the results to only the matching entries
   Options for custom variables:
-    values: required. Possible values for the variable. One of:
-      List of string: A list of possible values, in order.
-      Object: Map from labels (shown in the drop down) to values (what gets substituted), unordered.
-      List of { label, value }: Ordered version of the object.
+    values: required. List of possible values for the variable.
   Options for textbox variables:
     textbox: true, required. Indicates this is a textbox variable.
 
@@ -339,15 +336,16 @@ local util = import "util.libsonnet";
     type: "custom",
     options: [
       {
-        text: if std.type(item) == "string" then item else item.label,
-        value: if std.type(item) == "string" then item else item.value,
+        text: value,
+        value: value,
       }
-      for item in
-        if std.type(args.values) == "array" then args.values else [
-          { label: item.key, value: item.value }
-          for item in std.objectKeysValues(args.values)
-        ]
+      for value in args.values
     ],
+    query: std.join(",\n", [
+      # escape , in values
+      std.strReplace(value, ",", "\\,")
+      for value in args.values
+    ]),
     # Experimentally, custom variables don't tolerate a missing "current" the way others do.
     # Instead, default to the first option in the list.
     [if args.value == null then "current"]: self.options[0],

@@ -26,6 +26,7 @@ local grafana = import "grafana.libsonnet";
       apiVersion: 1,
       providers: [{
         name: "dashboards",
+        updateIntervalSeconds: 10,
         options: {
           path: "/etc/grafana/dashboards",
         },
@@ -85,13 +86,6 @@ local grafana = import "grafana.libsonnet";
             "bar",
             "baz",
           ],
-        },
-        {
-          name: "myobj",
-          values: {
-            foo: "phew",
-            bar: "bahre",
-          }
         },
       ],
       rows: [
