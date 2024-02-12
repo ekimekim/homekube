@@ -34,7 +34,7 @@ $(GENERATE_LIBSONNETS): %.libsonnet: %
 			(
 				$$ARGS.positional[]
 				| split("/") # split into path components
-				| .[0][:-8] as $$name # take basename, strip ".jsonnet"
+				| .[-1][:-8] as $$name # take basename, strip ".jsonnet"
 				| (.[-2:] | join("/")) as $$path # take last two parts only
 				| "  \($$name|tojson): import \($$path|tojson),"
 			),
