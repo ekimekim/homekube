@@ -39,6 +39,7 @@ grafana.dashboard({
   ],
   local filters = 'container!="", pod=~"$pod_regex", node=~"$node", namespace=~"$namespace", pod=~"$pod", container=~"$container"',
   rows: [
+    // Top-line usage metrics: CPU and memory
     [
       {
         name: "CPU usage by container",
@@ -65,6 +66,18 @@ grafana.dashboard({
           ||| % filters,
         },
       },
+    ],
+    // Secondary usage metrics: network IO, open FDs, disk IO, disk space
+    [
+    ],
+    // Breakdowns of previous usage into detailed types + limits
+    [
+      // CPU into system, user, request, limit
+      // Memory into various subtypes, request, limit
+      // FDs into sockets and not, limit
+    ],
+    // Tertiary usage info: page faults, inodes, process/thread counts, dropped packets
+    [
     ],
   ],
 })
