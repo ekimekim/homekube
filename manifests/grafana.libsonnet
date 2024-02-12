@@ -115,17 +115,41 @@ local util = import "util.libsonnet";
       title: args.name,
       [if args.uid != null then "uid"]: args.uid,
 
-      annotations: {list: []},
-      //links: [],
-      //tags: [],
-      //templating: [],
+      // Defaults and things we don't use, included here so that grafana doesn't show a "diff"
+      // on the provisioned dashboard.
+      annotations: {
+        list: [
+          {
+            builtIn: 1,
+            datasource: {
+              type: "grafana",
+              uid: "-- Grafana --"
+            },
+            enable: true,
+            hide: true,
+            iconColor: "rgba(0, 211, 255, 1)",
+            name: "Annotations & Alerts",
+            type: "dashboard"
+          },
+        ],
+      },
+      editable: true,
+      fiscalYearStartMonth: 0,
+      graphTooltip: 1,
+      links: [],
+      tags: [],
+      liveNow: false,
+      weekStart: "",
+      timezone: "",
 
       [if args.refresh != null then "refresh"]: args.refresh,
       time: {
         from: "now-%s" % args.time_range,
         to: "now",
       },
-      timepicker: args.timepicker,
+      timepicker: {
+        refresh_intervals: ["5s", "10s", "15s", "30s", "1m", "2m", "5m", "10m", "15m", "30m", "1h"],
+      } + args.timepicker,
 
       templating: {
         list: std.map($.variable, args.variables),
@@ -219,7 +243,7 @@ local util = import "util.libsonnet";
   timeseries_panel(raw_args):
     local args = {
       axis: {},
-      hover: "hidden",
+      hover: "desc",
       datasource: "prometheus",
     } + raw_args;
     local axis = {
@@ -256,23 +280,44 @@ local util = import "util.libsonnet";
       options: {
         legend: {
           showLegend: false,
+          calcs: [],
+          displayMode: "list",
+          placement: "bottom",
         },
         tooltip: {
-          hidden: { mode: "none" },
-          single: { mode: "single" },
+          hidden: { mode: "none", sort: "none", },
+          single: { mode: "single", sort: "none", },
           desc: { mode: "multi", sort: "desc" },
           asc: { mode: "multi", sort: "asc" },
         }[args.hover],
       },
       fieldConfig: {
         defaults: {
+          color: {
+            mode: "palette-classic",
+          },
           unit: axis.units,
+          unitScale: true,
           [if axis.min != null then "min"]: axis.min,
           [if axis.max != null then "max"]: axis.max,
           custom: {
+            axisBorderShow: false,
+            axisCenteredZero: false,
+            axisColorMode: "text",
             axisLabel: axis.label,
+            axisPlacement: "auto",
+            barAlignment: 0,
             drawStyle: axis.style,
             fillOpacity: if axis.stack != null then 40 else 0,
+            gradientMode: "none",
+            hideFrom: {legend: false, tooltip: false, viz: false},
+            insertNulls: false,
+            lineInterpolation: "linear",
+            lineWidth: 1,
+            pointSize: 5,
+            scaleDistribution: {type: "linear"},
+            showPoints: "auto",
+            spanNulls: false,
             stacking: {
               group: "A",
               mode:
@@ -280,6 +325,15 @@ local util = import "util.libsonnet";
                 else if axis.stack == true then "normal"
                 else axis.stack
             },
+            thresholdsStyle: {mode: "off"},
+          },
+          mappings: [],
+          thresholds: {
+            mode: "absolute",
+            steps: [
+              {color: "green", value: null},
+              {color: "red", value: 80},
+            ],
           },
         },
       },
@@ -312,8 +366,10 @@ local util = import "util.libsonnet";
     } +
     if std.objectHas(args, "query") then multi_options + $.query_variable(args)
     else if std.objectHas(args, "values") then multi_options + $.custom_variable(args)
-    else if std.objectHas(args, "textbox") then { type: "textbox" }
-    else error "Cannot determine variable type",
+    else if std.objectHas(args, "textbox") then {
+      type: "textbox",
+      query: "",
+    } else error "Cannot determine variable type",
 
   query_variable(args): {
     type: "query",
