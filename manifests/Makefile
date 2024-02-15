@@ -52,6 +52,7 @@ $(GENERATE_LIBSONNETS): %.libsonnet: %
 %.d: %.jsonnet $(GENERATE_LIBSONNETS)
 	# The initial output is of form %.jsonnet: DEP DEP ...
 	# We want %.yaml %.d: DEP DEP ...
+	set -o pipefail
 	jsonnet_dep_graph --jpath . "$<" |
 		awk -F ': ' '{
 			base = substr($$1, 0, length($$1) - 8); # strip .jsonnet

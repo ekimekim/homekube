@@ -78,6 +78,10 @@ Panel:
       "single": Only the series hovered over is shown
       "desc": Default. All series are shown, sorted by value decending.
       "asc": All series are shown, sorted by value ascending.
+    overrides: Map from regex matching series name to properties map.
+      Known keys to work in properties map:
+        "custom.transform": "negative-Y"
+          Displays the series negated on the graph, without negating the value in the legend etc.
   Options for custom panels:
     custom: Required. An opaque object that will be merged into the panel JSON.
 
@@ -91,6 +95,21 @@ local util = import "util.libsonnet";
     byte_rate: "binBps",
     time_ago: "dateTimeFromNow",
     time: "dtdurations",
+  },
+
+  mixins: {
+    // Makes a graph a "plus-minus graph", where some series are displayed on the negative Y axis.
+    // This is helpful for two correlated collections of metrics, eg. reads vs writes.
+    plus_minus(series_regex): {
+      axis+: {
+        min: null,
+      },
+      overrides+: {
+        [series_regex]+: {
+          "custom.transform": "negative-Y",
+        },
+      },
+    },
   },
 
   dashboard(raw_args):
@@ -245,6 +264,7 @@ local util = import "util.libsonnet";
       axis: {},
       hover: "desc",
       datasource: "prometheus",
+      overrides: {},
     } + raw_args;
     local axis = {
       units: "short",
@@ -336,6 +356,20 @@ local util = import "util.libsonnet";
             ],
           },
         },
+        overrides: [
+          {
+            matcher: {
+              id: "byRegexp",
+              options: item.key,
+            },
+            properties: [
+              {
+                id: property.key,
+                value: property.value,
+              } for property in std.objectKeysValues(item.value)
+            ],
+          } for item in std.objectKeysValues(args.overrides)
+        ]
       },
     },
 

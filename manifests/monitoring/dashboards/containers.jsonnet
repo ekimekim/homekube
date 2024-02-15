@@ -37,7 +37,10 @@ grafana.dashboard({
       },
     },
   ],
-  local filters = 'container!="", pod=~"$pod_regex", node=~"$node", namespace=~"$namespace", pod=~"$pod", container=~"$container"',
+  local filters = {
+    pod: 'pod!="", pod=~"$pod_regex", node=~"$node", namespace=~"$namespace", pod=~"$pod"',
+    container: '%s, container!="", container=~"$container"' % self.pod,
+  },
   rows: [
     // Top-line usage metrics: CPU and memory
     [
@@ -52,7 +55,7 @@ grafana.dashboard({
             sum by (node, namespace, pod, container, id) (
               rate(container_cpu_usage_seconds_total{%s}[1m])
             )
-          ||| % filters,
+          ||| % filters.container,
         },
       },
       {
@@ -63,12 +66,63 @@ grafana.dashboard({
             max by (node, namespace, pod, container, id) (
               container_memory_rss{%s}
             )
-          ||| % filters,
+          ||| % filters.container,
         },
       },
     ],
     // Secondary usage metrics: network IO, open FDs, disk IO, disk space
     [
+      grafana.mixins.plus_minus("\\[Rx\\] .*") + {
+        name: "Network throughput by pod",
+        axis+: {
+          units: grafana.units.byte_rate,
+          labels: "Rx | Tx",
+          stack: true,
+        },
+        series: {
+          "[Tx] {{namespace}} - {{pod}} ({{node}})": |||
+            sum by (node, namespace, pod, id) (
+              rate(container_network_transmit_bytes_total{%s}[1m])
+            )
+          ||| % filters.pod,
+          "[Rx] {{namespace}} - {{pod}} ({{node}})": |||
+            sum by (node, namespace, pod, id) (
+              rate(container_network_receive_bytes_total{%s}[1m])
+            )
+          ||| % filters.pod,
+        },
+      },
+      {
+        name: "Open FDs by container",
+        axis: { label: "FDs" },
+        series: {
+          "{{namespace}} - {{pod}} - {{container}} ({{node}})": |||
+            max by (node, namespace, pod, container, id) (
+              container_file_descriptors{%s}
+            )
+          ||| % filters.container,
+        },
+      },
+      grafana.mixins.plus_minus("\\[Read\\] .*") + {
+        name: "Disk throughput by pod",
+        axis+: {
+          units: grafana.units.byte_rate,
+          labels: "Read | Write",
+          stack: true,
+        },
+        series: {
+          "[Read] {{namespace}} - {{pod}} - {{container}} ({{node}})": |||
+            sum by (node, namespace, pod, container, id) (
+              rate(container_fs_reads_bytes_total{%s}[1m])
+            )
+          ||| % filters.container,
+          "[Write] {{namespace}} - {{pod}} - {{container}} ({{node}})": |||
+            sum by (node, namespace, pod, container, id) (
+              rate(container_fs_writes_bytes_total{%s}[1m])
+            )
+          ||| % filters.container,
+        },
+      },
     ],
     // Breakdowns of previous usage into detailed types + limits
     [
