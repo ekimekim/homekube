@@ -38,7 +38,7 @@ local k8s = import "k8s.libsonnet";
         role: "pod",
         attach_metadata: { node: true },
       }],
-      relabel_configs: [
+      target_relabels:: [
         // If the prometheus.io/path annotation is set, replace __metrics_path__ with it.
         {
           action: "replace",
@@ -47,6 +47,8 @@ local k8s = import "k8s.libsonnet";
           target_label: "__metrics_path__",
           replacement: "${1}",
         },
+      ],
+      meta_relabels:: [
         // Record useful info as metric labels.
         // No need to record the pod ip as it is saved in "instance".
         // The container/pod ids aren't meaningful on their own but are useful
@@ -62,6 +64,7 @@ local k8s = import "k8s.libsonnet";
         labelmap("__meta_kubernetes_pod_controller_name", "controller"),
         labelmap("__meta_kubernetes_pod_controller_kind", "controller_kind"),
       ],
+      relabel_configs: self.target_relabels + self.meta_relabels,
     },
     // Actual config
     global: {
@@ -105,7 +108,7 @@ local k8s = import "k8s.libsonnet";
       pod_config + use_k8s_auth + {
         job_name: "system-pods",
         tls_config+: { insecure_skip_verify: true },
-        relabel_configs+: [
+        target_relabels+:: [
           // Only keep targets where port name == "prom-system"
           {
             action: "keep",
@@ -113,6 +116,23 @@ local k8s = import "k8s.libsonnet";
             regex: "prom-system",
           },
         ],
+      },
+      // Special case for kube-state-metrics, ignoring the pod's own metadata in favor of the
+      // pod, namespace etc labels that the metrics carry.
+      // Anything else can get the same behaviour by using the "prom-no-meta" port label.
+      pod_config + {
+        job_name: "no-meta-pods",
+        honor_labels: true,
+        target_relabels+:: [
+          // Only keep targets where port name == "prom-no-meta"
+          {
+            action: "keep",
+            source_labels: ["__meta_kubernetes_pod_container_port_name"],
+            regex: "prom-no-meta",
+          },
+        ],
+        // Drop metadata labels
+        relabel_configs: self.target_relabels,
       },
     ],
   },
