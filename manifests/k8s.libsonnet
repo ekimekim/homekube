@@ -17,7 +17,9 @@ local util = import "util.libsonnet";
     },
   },
 
-  namespace(name): $.resource("v1", "Namespace") + $.metadata(name, namespace=""),
+  namespace(name):
+    $.resource("v1", "Namespace") +
+    $.metadata(name, namespace="", labels={name: name}),
 
   // Ports should be a map {name: port number | port spec object}
   service(

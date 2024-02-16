@@ -49,7 +49,7 @@ $(GENERATE_LIBSONNETS): %.libsonnet: %
 # Because the dep graph may need to read the generated libsonnets, we need to do those first.
 # Rebuilding all the dependencies if any of the generated libsonnet change isn't ideal,
 # but should be fine.
-%.d: %.jsonnet $(GENERATE_LIBSONNETS)
+%.d: %.jsonnet $(GENERATE_LIBSONNETS) namespaces.json
 	# The initial output is of form %.jsonnet: DEP DEP ...
 	# We want %.yaml %.d: DEP DEP ...
 	set -o pipefail
@@ -62,6 +62,10 @@ include $(DEPS)
 
 $(YAMLS): %.yaml: %.jsonnet manifests.jsonnet
 	jsonnet --jpath . --yaml-stream manifests.jsonnet --tla-str 'path=$<' --tla-code 'value=import "$<"' > "$@"
+
+# Generate a JSON list of all folder names
+namespaces.json:
+	jq -n '$$ARGS.positional|map(.[:-1])' --args */ > "$@"
 
 .PHONY: clean
 clean:
