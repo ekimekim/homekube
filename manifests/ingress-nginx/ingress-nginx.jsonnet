@@ -17,17 +17,6 @@ local k8s = import "k8s.libsonnet";
   admission_account: bound_account("nginx-ingress-admission"),
 
   main_role: k8s.role("nginx-ingress", rules={
-    get: {
-      "": ["namespaces"],
-    },
-    read: {
-      "": ["configmaps", "pods", "secrets", "endpoints", "services"],
-      "networking.k8s.io": ["ingresses", "ingressclasses"],
-      "discovery.k8s.io": ["endpointslices"],
-    },
-    update: {
-      "networking.k8s.io": ["ingresses/status"],
-    },
     create: {
       "coordination.k8s.io": ["leases"],
     },
@@ -38,11 +27,6 @@ local k8s = import "k8s.libsonnet";
         resources: ["leases"],
         resourceNames: ["ingress-nginx-leader"],
       },
-      {
-        verbs: ["create", "patch"],
-        apiGroups: [""],
-        resources: ["events"],
-      },
     ],
   }),
 
@@ -52,9 +36,6 @@ local k8s = import "k8s.libsonnet";
       "coordination.k8s.io": ["leases"],
       "networking.k8s.io": ["ingresses", "ingressclasses"],
       "discovery.k8s.io": ["endpointslices"],
-    },
-    get: {
-      "": ["nodes"],
     },
     update: {
       "networking.k8s.io": ["ingresses/status"],
