@@ -70,13 +70,13 @@ grafana.dashboard({
         },
       },
     ],
-    // Secondary usage metrics: network IO, open FDs, disk IO, disk space
+    // Secondary usage metrics: network IO, open FDs, disk IO
     [
       grafana.mixins.plus_minus("\\[Rx\\] .*") + {
         name: "Network throughput by pod",
         axis+: {
           units: grafana.units.byte_rate,
-          labels: "Rx | Tx",
+          label: "Rx | Tx",
           stack: true,
         },
         series: {
@@ -94,7 +94,7 @@ grafana.dashboard({
       },
       {
         name: "Open FDs by container",
-        axis: { label: "FDs" },
+        axis: { label: "files" },
         series: {
           "{{namespace}} - {{pod}} - {{container}} ({{node}})": |||
             max by (node, namespace, pod, container, id) (
@@ -107,7 +107,7 @@ grafana.dashboard({
         name: "Disk throughput by pod",
         axis+: {
           units: grafana.units.byte_rate,
-          labels: "Read | Write",
+          label: "Read | Write",
           stack: true,
         },
         series: {
@@ -124,11 +124,24 @@ grafana.dashboard({
         },
       },
     ],
-    // Breakdowns of previous usage into detailed types + limits
+    // Breakdowns of previous usage into detailed types + limits,
+    // plus disk usage since it didn't fit on prev line
     [
+      {
+        name: "CPU usage breakdown",
+        axis: {
+          units: grafana.units.percent,
+          stack: true,
+        },
+        series: {
+          user: "sum(rate(container_cpu_user_seconds_total{%s}[1m]))",
+          system: "sum(rate(container_cpu_system_seconds_total{%s}[1m]))",
+          // TODO requires kube-state-metrics
+        },
+      },
       // CPU into system, user, request, limit
       // Memory into various subtypes, request, limit
-      // FDs into sockets and not, limit
+      // Disk space
     ],
     // Tertiary usage info: page faults, inodes, process/thread counts, dropped packets
     [
