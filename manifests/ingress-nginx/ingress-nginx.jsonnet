@@ -17,6 +17,9 @@ local k8s = import "k8s.libsonnet";
   admission_account: bound_account("nginx-ingress-admission"),
 
   main_role: k8s.role("nginx-ingress", rules={
+    get: {
+      "": ["configmaps", "pods", "secrets", "endpoints"],
+    },
     create: {
       "coordination.k8s.io": ["leases"],
     },
@@ -31,37 +34,32 @@ local k8s = import "k8s.libsonnet";
   }),
 
   main_cluster_role: k8s.role("nginx-ingress", namespace="", rules={
-    read: {
-      "": ["configmaps", "endpoints", "nodes", "pods", "secrets", "namespaces", "services"],
+    enumerate: {
+      "": ["configmaps", "endpoints", "pods", "secrets", "namespaces"],
       "coordination.k8s.io": ["leases"],
+    }
+    read: {
+      "": ["nodes", "services"],
       "networking.k8s.io": ["ingresses", "ingressclasses"],
       "discovery.k8s.io": ["endpointslices"],
     },
     update: {
       "networking.k8s.io": ["ingresses/status"],
     },
-    custom: [
-      {
-        verbs: ["create", "patch"],
-        apiGroups: [""],
-        resources: ["events"],
-      },
-    ],
+    "create,patch": {
+      "": ["events"],
+    }
   }),
 
   admission_role: k8s.role("nginx-ingress-admission", rules={
-    custom: [{
-      verbs: ["get", "create"],
-      apiGroups: [""],
-      resources: ["secrets"],
-    }],
+    "get,create": {
+      "": ["secrets"],
+    },
   }),
 
   admission_cluster_role: k8s.role("nginx-ingress-admission", namespace="", rules={
-    custom: [{
-      verbs: ["get", "update"],
-      apiGroups: ["admissionregistration.k8s.io"],
-      resources: ["validatingwebhookconfigurations"],
-    }],
+    "get,update": {
+      "admissionregistration.k8s.io": ["validatingwebhookconfigurations"],
+    },
   }),
 }

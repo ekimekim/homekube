@@ -89,8 +89,9 @@ local util = import "util.libsonnet";
   // Resource objects map from an apiGroup to a list of resources.
   // Permission sets:
   //   read: ["get", "list", "watch"]
+  //   enumerate: ["list", "watch"],
   //   custom: Instead of a resource object, maps to a list of already-expanded rules.
-  //   anything else: Assumed to be a single verb, resolves to ["key"]
+  //   anything else: Comma-seperated list of verbs
   role(name, namespace = null, labels = {}, rules = {}):
     $.resource("rbac.authorization.k8s.io/v1", if namespace == "" then "ClusterRole" else "Role")
     + $.metadata(name, namespace, labels)
@@ -102,7 +103,7 @@ local util = import "util.libsonnet";
             {
               verbs:
                 if verb.key == "read" then ["get", "list", "watch"]
-                else [verb.key],
+                else std.split(verb.key, ","),
               apiGroups: [group.key],
               resources: group.value,
             } for group in std.objectKeysValues(verb.value)
