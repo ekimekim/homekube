@@ -83,10 +83,31 @@ local util = import "util.libsonnet";
     $.resource("v1", "ServiceAccount") + $.metadata(name, namespace, labels),
 
   // Role or ClusterRole (for the latter, set namespace = "").
-  role(name, namespace = null, labels = {}, rules = []):
+  // Rules object maps from defined permission sets to resource objects.
+  // Resource objects map from an apiGroup to a list of resources.
+  // Permission sets:
+  //   read: ["get", "list", "watch"]
+  //   custom: Instead of a resource object, maps to a list of already-expanded rules.
+  //   anything else: Assumed to be a single verb, resolves to ["key"]
+  role(name, namespace = null, labels = {}, rules = {}):
     $.resource("rbac.authorization.k8s.io/v1", if namespace == "" then "ClusterRole" else "Role")
     + $.metadata(name, namespace, labels)
-    + { rules: rules },
+    + {
+      rules: std.flatMap(
+        function(verb)
+          if verb.key == "custom" then verb.value
+          else [
+            {
+              verbs:
+                if verb.key == "read" then ["get", "list", "watch"]
+                else [verb.key],
+              apiGroups: [group.key],
+              resources: group.value,
+            } for group in std.objectKeysValues(verb.value)
+          ],
+        std.objectKeysValues(rules),
+      ),
+    },
 
   // RoleBinding or ClusterRoleBinding (for the latter, set namespace = "")
   role_binding(

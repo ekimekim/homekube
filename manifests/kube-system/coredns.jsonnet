@@ -35,18 +35,12 @@ local k8s = import "k8s.libsonnet";
 
   // There is a "system:kube-dns" default cluster role, but it doesn't provide everything
   // that coredns needs
-  perms: k8s.sa_with_role("coredns", namespace = "kube-system", cluster_role = true, rules = [
-    {
-      apiGroups: [""],
-      resources: ["endpoints", "services", "namespaces"],
-      verbs: ["list", "watch"],
+  perms: k8s.sa_with_role("coredns", namespace = "kube-system", cluster_role = true, rules = {
+    read: {
+      "": ["endpoints", "services", "namespaces"],
+      "discovery.k8s.io": ["endpointslices"],
     },
-    {
-      apiGroups: ["discovery.k8s.io"],
-      resources: ["endpointslices"],
-      verbs: ["list", "watch"],
-    },
-  ]),
+  }),
 
   deployment: k8s.deployment("coredns", pod={
     serviceAccount: "coredns",

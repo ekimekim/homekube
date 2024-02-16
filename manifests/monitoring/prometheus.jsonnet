@@ -122,11 +122,9 @@ local k8s = import "k8s.libsonnet";
     "prometheus.yml": std.manifestJson(config),
   }),
 
-  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = [
-    {
-      apiGroups: [""],
-      verbs: ["get", "list", "watch"],
-      resources: [
+  perms: k8s.sa_with_role("prometheus", namespace = "monitoring", cluster_role = true, rules = {
+    read: {
+      "": [
         // To list kubelets to scrape, and get node metadata for pods
         "nodes",
         // To scrape kubelet metrics
@@ -135,12 +133,14 @@ local k8s = import "k8s.libsonnet";
         "pods",
       ],
     },
-    {
-      // To scrape metrics from system components
-      nonResourceURLs: ["/metrics"],
-      verbs: ["get"],
-    },
-  ]),
+    custom: [
+      {
+        // To scrape metrics from system components
+        nonResourceURLs: ["/metrics"],
+        verbs: ["get"],
+      },
+    ],
+  }),
 
   service: k8s.service("prometheus", ports = {
     http: { port: 80, targetPort: 9090 }, // TODO change prom port
