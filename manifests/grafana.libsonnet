@@ -115,7 +115,7 @@ local util = import "util.libsonnet";
   dashboard(raw_args):
     local args = {
       name: error "Name is required",
-      uid: util.replaceNonMatching(
+      uid: util.replace_non_matching(
         std.asciiLower(args.name),
         "-",
         function(c) c >= "a" && c <= "z",

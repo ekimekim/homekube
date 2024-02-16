@@ -20,7 +20,7 @@
       error "Expected single element but got %s: %s" % [std.length(value), value],
 
   // Replaces all non-matching characters in a string with a replacement char.
-  replaceNonMatching(string, replacement, matcher): std.join("", [
+  replace_non_matching(string, replacement, matcher): std.join("", [
     if matcher(c) then c else replacement
     for c in std.stringChars(string)
   ]),
