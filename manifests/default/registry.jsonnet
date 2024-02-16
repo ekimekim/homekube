@@ -1,5 +1,6 @@
 local k8s = import "k8s.libsonnet";
 {
+  // TODO auth to prevent malicious writes that I then pull later
   local config = {
     version: "0.1",
     log: {
@@ -50,6 +51,5 @@ local k8s = import "k8s.libsonnet";
     } + k8s.mixins.host_path("data", "charm", "/srv/registry"),
   ) + k8s.mixins.run_one,
 
-  // TODO auth to prevent malicious writes that I then pull later
-  // TODO service
+  service: k8s.service("registry", ports={ http: 80 }),
 }
