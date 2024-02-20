@@ -16,6 +16,7 @@ local k8s = import "k8s.libsonnet";
         "--path.rootfs=/host",
         // Don't monitor network filesystems, it's slow and causes problems if they're down
         "--collector.filesystem.fs-types-exclude=cifs",
+        "--web.listen-address=:9999" // avoid conflict with depict dev env
       ],
       volumeMounts: [{
         name: "root",
@@ -25,7 +26,7 @@ local k8s = import "k8s.libsonnet";
       }],
       ports: [{
         name: "prom",
-        containerPort: 9100,
+        containerPort: 9999,
       }]
     }],
   })
