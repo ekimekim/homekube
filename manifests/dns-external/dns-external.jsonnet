@@ -56,14 +56,30 @@ local k8s = import "k8s.libsonnet";
       name: "config",
       configMap: { name: "coredns" },
     }], 
+    nodeName: "charm", // see note below about port forwarding
     containers: [{
       name: "coredns",
       image: "coredns/coredns:1.11.1",
       args: ["-conf", "/etc/coredns/Corefile"],
-      ports: [{
-        name: "prom",
-        containerPort: 8080,
-      }], 
+      ports: [
+        {
+          name: "prom",
+          containerPort: 8080,
+        },
+        // For now, force running on charm on a specific host port
+        // so we can port-forward to it.
+        {
+          name: "dns",
+          protocol: "UDP",
+          containerPort: 53,
+          hostPort: 5353,
+        },
+        {
+          name: "dnstcp",
+          containerPort: 53,
+          hostPort: 5353,
+        },
+      ], 
       readinessProbe: {
         httpGet: {
           port: 8082,
