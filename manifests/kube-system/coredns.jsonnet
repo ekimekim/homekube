@@ -1,7 +1,7 @@
 local k8s = import "k8s.libsonnet";
 {
   local corefile = |||
-    .:53 {
+    . {
       # log all queries
       log
       # log errors
@@ -51,7 +51,7 @@ local k8s = import "k8s.libsonnet";
     containers: [{
       name: "coredns",
       image: "coredns/coredns:1.11.1",
-      args: ["-conf", "/etc/Corefile"],
+      args: ["-conf", "/etc/coredns/Corefile"],
       ports: [{
         name: "prom",
         containerPort: 8080,
@@ -64,8 +64,7 @@ local k8s = import "k8s.libsonnet";
       },
       volumeMounts: [{
         name: "config",
-        subPath: "Corefile",
-        mountPath: "/etc/Corefile",
+        mountPath: "/etc/coredns",
       }],
     }],
   }),
