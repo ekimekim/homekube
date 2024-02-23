@@ -64,7 +64,7 @@ $(YAMLS): %.yaml: %.jsonnet manifests.jsonnet
 	jsonnet --jpath . --yaml-stream manifests.jsonnet --tla-str 'path=$<' --tla-code 'value=import "$<"' > "$@"
 
 # Generate a JSON list of all folder names
-namespaces.json:
+namespaces.json: .
 	jq -n '$$ARGS.positional|map(.[:-1])' --args */ > "$@"
 
 .PHONY: clean

@@ -128,4 +128,4 @@ install-master: install-etcd install-api-server install-scheduler install-contro
 
 .PHONY: apply-manifests
 apply-manifests: manifests
-	kubectl --context=xenon apply -f $< --prune -l managed-by=homekube
+	kubectl --context=xenon apply -f manifests/manifests.yaml --prune -l managed-by=homekube
