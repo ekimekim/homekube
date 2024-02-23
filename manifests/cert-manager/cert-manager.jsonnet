@@ -1,3 +1,3 @@
 {
-  upstream: std.parseYaml(importstr "upstream.yaml"),
+  //upstream: std.parseYaml(importstr "upstream.yaml"),
 }

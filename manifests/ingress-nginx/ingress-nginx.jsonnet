@@ -4,11 +4,11 @@ local k8s = import "k8s.libsonnet";
     service_account: k8s.service_account(name),
     role_binding: k8s.role_binding(name,
       role = {role: name},
-      subject = [{name: name, namespace: "nginx-ingress"}],
+      subjects = [{name: name, namespace: "nginx-ingress"}],
     ),
     cluster_role_binding: k8s.role_binding(name,
       role = {cluster_role: name},
-      subject = [{name: name, namespace: "nginx-ingress"}],
+      subjects = [{name: name, namespace: "nginx-ingress"}],
       namespace = "",
     ),
   },
@@ -37,7 +37,7 @@ local k8s = import "k8s.libsonnet";
     enumerate: {
       "": ["configmaps", "endpoints", "pods", "secrets", "namespaces"],
       "coordination.k8s.io": ["leases"],
-    }
+    },
     read: {
       "": ["nodes", "services"],
       "networking.k8s.io": ["ingresses", "ingressclasses"],
