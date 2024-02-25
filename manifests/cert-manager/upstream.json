@@ -8203,7 +8203,8 @@
                                 "--cluster-resource-namespace=$(POD_NAMESPACE)",
                                 "--leader-election-namespace=kube-system",
                                 "--acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.14.3",
-                                "--max-concurrent-challenges=60"
+                                "--max-concurrent-challenges=60",
+                                "--enable-certificate-owner-ref"
                             ],
                             "ports": [
                                 {
