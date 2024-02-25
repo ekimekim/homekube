@@ -179,6 +179,28 @@ local util = import "util.libsonnet";
     ),
   },
 
+  certificate(
+    name,
+    dns_names, // names this certificate should match
+    secret = name,
+    namespace = "",
+    labels = { app: name },
+  ): $.resource("cert-manager.io/v1", "Certificate", name, namespace, labels) + {
+    spec: {
+      secretName: secret,
+      // Also copy the requested labels to the generated Secret
+      secretTemplate: {
+        labels: labels,
+      },
+      dnsNames: dns_names,
+      // For now, hard-code the issuer. We can make this an arg later if we really need it.
+      issuerRef: {
+        kind: "ClusterIssuer",
+        name: "letsencrypt",
+      },
+    },
+  },
+
   // Patches to objects of various kinds to add certain common configurations.
   mixins: {
 
