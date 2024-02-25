@@ -1,1 +1,0 @@
-(import "nginx.libsonnet")("nginx")

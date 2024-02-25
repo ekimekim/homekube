@@ -15,7 +15,7 @@ local k8s = import "k8s.libsonnet";
         solvers: [
           {
             http01: {
-              ingress: { ingressClassName: "nginx" },
+              ingress: { ingressClassName: "nginx-external" },
             },
           },
         ],
