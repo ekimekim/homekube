@@ -52,4 +52,8 @@ local k8s = import "k8s.libsonnet";
   ) + k8s.mixins.run_one,
 
   service: k8s.service("registry", ports={ http: 80 }),
+
+  ingress: k8s.ingress("registry", tls=true, rules={
+    "registry.xenon.ekime.kim": {},
+  }),
 }
