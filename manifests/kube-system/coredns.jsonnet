@@ -21,6 +21,14 @@ local k8s = import "k8s.libsonnet";
       local
       # maintain a 30sec record cache (if record TTL is not shorter)
       cache 30
+      # For A records for *.xenon.ekime.kim (but only direct subdomains, not nested,
+      # to avoid .svc.xenon.ekime.kim), respond with a CNAME
+      # to the internal ingress-nginx controller.
+      template IN ANY xenon.ekime.kim {
+        match "^[^.]*\.xenon\.ekime\.kim\.$"
+        answer "{{ .Name }} 3600 IN CNAME nginx-internal-ingress-controller.ingress-nginx.svc.xenon.ekime.kim"
+        fallthrough
+      }
       # look up kubernetes-related dns names in kubernetes
       # defaults to using in-cluster endpoint with pod service account
       kubernetes xenon.ekime.kim
