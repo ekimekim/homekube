@@ -201,6 +201,72 @@ local util = import "util.libsonnet";
     },
   },
 
+  ingress(
+    name,
+    // A map from hostname to a path rule object or list of them. Each path rule contains:
+    //   path: as per HTTPIngressPath.v1.networking.api.k8s.io, default "/"
+    //   path_type: as per HTTPIngressPath.v1.networking.api.k8s.io, default "Prefix"
+    //   service: defaults to ingress name. one of:
+    //     string, a service name, on port 80
+    //     object { name, port }
+    //       name: the service name
+    //       port: the service port, either a name string or port number.
+    //   Note a path rule of {} thus means:
+    //     "all paths go to a service with the same name as the ingress, on port 80"
+    rules,
+    // If true, generate a TLS cert for all hostnames in rules and terminate TLS.
+    // If an object, is used verbatim as spec.tls and no cert is generated.
+    tls = false,
+    // The ingress class to use.
+    class = "nginx-internal",
+    namespace = null,
+    labels = { app: name },
+  ): $.resource("networking.k8s.io/v1", "Ingress", name, namespace, labels) + {
+    metadata+: {
+      annotations+: {
+        [if tls == true then "cert-manager.io/cluster-issuer"]: "letsencrypt",
+      },
+    },
+    spec: {
+      ingressClassName: class,
+      rules: [
+        {
+          host: hostitem.key,
+          http: {
+            paths: [
+              local path = {
+                path: "/",
+                path_type: "Prefix",
+                service: name,
+              } + _path;
+              {
+                path: path.path,
+                pathType: path.path_type,
+                backend: {
+                  service: {
+                    local service =
+                      if std.type(path.service) == "string" then { name: path.service, port: 80 }
+                      else path.service,
+                    name: service.name,
+                    port: {
+                      [if std.type(service.port) == "string" then "name" else "number"]: service.port,
+                    },
+                  },
+                },
+              } for _path in util.maybe_array(hostitem.value)
+            ],
+          },
+        } for hostitem in std.objectKeysValues(rules)
+      ],
+      [if tls != false then "tls"]: [
+        if tls == true then {
+          hosts: std.objectFields(rules),
+          secretName: "ingress-tls-%s" % name,
+        } else tls,
+      ],
+    },
+  },
+
   // Patches to objects of various kinds to add certain common configurations.
   mixins: {
 

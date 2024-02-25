@@ -19,6 +19,11 @@
     else
       error "Expected single element but got %s: %s" % [std.length(value), value],
 
+  // Wraps an item in a single-element list if it isn't already a list.
+  // This is useful for APIs that take a "thing or list of thing" value.
+  maybe_array(value):
+    if std.type(value) == "array" then value else [value],
+
   // Replaces all non-matching characters in a string with a replacement char.
   replace_non_matching(string, replacement, matcher): std.join("", [
     if matcher(c) then c else replacement
