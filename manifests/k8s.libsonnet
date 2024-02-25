@@ -74,6 +74,22 @@ local util = import "util.libsonnet";
     },
   },
 
+  job(
+    name,
+    pod,
+    namespace = null,
+    labels = { app: name },
+  ): $.resource("batch/v1", "Job") + $.metadata(name, namespace, labels) + {
+    spec: {
+      template: {
+        metadata: {
+          labels: labels,
+        },
+        spec: {restartPolicy: "OnFailure"} + pod,
+      },
+    },
+  },
+
   configmap(
     name,
     data,
@@ -103,6 +119,7 @@ local util = import "util.libsonnet";
             {
               verbs:
                 if verb.key == "read" then ["get", "list", "watch"]
+                else if verb.key == "enumerate" then ["list", "watch"]
                 else std.split(verb.key, ","),
               apiGroups: [group.key],
               resources: group.value,
