@@ -183,7 +183,7 @@ local util = import "util.libsonnet";
     name,
     dns_names, // names this certificate should match
     secret = name,
-    namespace = "",
+    namespace = null,
     labels = { app: name },
   ): $.resource("cert-manager.io/v1", "Certificate", name, namespace, labels) + {
     spec: {

@@ -134,7 +134,12 @@ function(ingress_name) {
   webhook_service: k8s.service(
     admission_name,
     labels = { app: controller_name },
-    ports = { "https-webhook": 443 },
+    ports = {
+      "https-webhook": {
+        port: 443,
+        targetPort: 8443,
+      },
+    },
   ),
 
   local admission_certgen_job(name, opts) = k8s.job("%s-certgen-%s" % [admission_name, name], pod={
@@ -154,7 +159,7 @@ function(ingress_name) {
   }),
 
   patch_job: admission_certgen_job("patch", {
-    webhook_name: "ingress-nginx-admission",
+    webhook_name: admission_name,
     patch_mutating: "false",
     patch_failure_policy: "Fail",
   }),
