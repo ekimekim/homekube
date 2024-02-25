@@ -1,15 +1,11 @@
 local util = import "util.libsonnet";
 {
-  // Basic helper for specifying an api version and kind
-  resource(apiVersion, kind): {
-    apiVersion: apiVersion,
-    kind: kind,
-  },
-
-  // Helper that sets common metadata fields.
+  // Basic helper for specifying an api version, kind and metadata
   // Set namespace = null to omit entirely (which uses the default for your manifest).
   // Set namespace = "" to explicitly indicate "not namespaced".
-  metadata(name, namespace = null, labels = {}): {
+  resource(apiVersion, kind, name, namespace = null, labels = {}): {
+    apiVersion: apiVersion,
+    kind: kind,
     metadata: {
       name: name,
       [if namespace != null then "namespace"]: namespace,
@@ -17,9 +13,7 @@ local util = import "util.libsonnet";
     },
   },
 
-  namespace(name):
-    $.resource("v1", "Namespace") +
-    $.metadata(name, namespace="", labels={name: name}),
+  namespace(name): $.resource("v1", "Namespace", name, namespace="", labels={name: name}),
 
   // Ports should be a map {name: port number | port spec object}
   service(
@@ -27,7 +21,7 @@ local util = import "util.libsonnet";
     namespace = null,
     labels = { app: name },
     ports = {},
-  ): $.resource("v1", "Service") + $.metadata(name, namespace, labels) + {
+  ): $.resource("v1", "Service", name, namespace, labels) + {
     spec: {
       selector: labels,
       ports: [
@@ -44,7 +38,7 @@ local util = import "util.libsonnet";
     namespace = null,
     labels = { app: name },
     replicas = 1,
-  ): $.resource("apps/v1", "Deployment") + $.metadata(name, namespace, labels) + {
+  ): $.resource("apps/v1", "Deployment", name, namespace, labels) + {
     spec: {
       replicas: replicas,
       selector: { matchLabels: labels },
@@ -62,7 +56,7 @@ local util = import "util.libsonnet";
     pod,
     namespace = null,
     labels = { app: name },
-  ): $.resource("apps/v1", "DaemonSet") + $.metadata(name, namespace, labels) + {
+  ): $.resource("apps/v1", "DaemonSet", name, namespace, labels) + {
     spec: {
       selector: { matchLabels: labels },
       template: {
@@ -79,7 +73,7 @@ local util = import "util.libsonnet";
     pod,
     namespace = null,
     labels = { app: name },
-  ): $.resource("batch/v1", "Job") + $.metadata(name, namespace, labels) + {
+  ): $.resource("batch/v1", "Job", name, namespace, labels) + {
     spec: {
       template: {
         metadata: {
@@ -95,10 +89,10 @@ local util = import "util.libsonnet";
     data,
     namespace = null,
     labels = { app: name },
-  ): $.resource("v1", "ConfigMap") + $.metadata(name, namespace, labels) + { data: data },
+  ): $.resource("v1", "ConfigMap", name, namespace, labels) + { data: data },
 
   service_account(name, namespace = null, labels = {}):
-    $.resource("v1", "ServiceAccount") + $.metadata(name, namespace, labels),
+    $.resource("v1", "ServiceAccount", name, namespace, labels),
 
   // Role or ClusterRole (for the latter, set namespace = "").
   // Rules object maps from defined permission sets to resource objects.
@@ -109,9 +103,11 @@ local util = import "util.libsonnet";
   //   custom: Instead of a resource object, maps to a list of already-expanded rules.
   //   anything else: Comma-seperated list of verbs
   role(name, namespace = null, labels = {}, rules = {}):
-    $.resource("rbac.authorization.k8s.io/v1", if namespace == "" then "ClusterRole" else "Role")
-    + $.metadata(name, namespace, labels)
-    + {
+    $.resource(
+      "rbac.authorization.k8s.io/v1",
+      if namespace == "" then "ClusterRole" else "Role",
+      name, namespace, labels,
+    ) + {
       rules: std.flatMap(
         function(verb)
           if verb.key == "custom" then verb.value
@@ -141,9 +137,11 @@ local util = import "util.libsonnet";
     namespace = null,
     labels = {},
   ):
-    $.resource("rbac.authorization.k8s.io/v1", if namespace == "" then "ClusterRoleBinding" else "RoleBinding")
-    + $.metadata(name, namespace, labels)
-    + {
+    $.resource(
+      "rbac.authorization.k8s.io/v1",
+      if namespace == "" then "ClusterRoleBinding" else "RoleBinding",
+      name, namespace, labels,
+    ) + {
       roleRef: {
         local key = util.unwrap_single(std.objectFields(role)),
         local value = util.unwrap_single(std.objectValues(role)),

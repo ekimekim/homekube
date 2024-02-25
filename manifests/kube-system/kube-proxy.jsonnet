@@ -35,8 +35,7 @@ local util = import "util.libsonnet";
   }),
 
   service_account: k8s.service_account("kube-proxy", "kube-system"),
-  binding: k8s.resource("rbac.authorization.k8s.io/v1", "ClusterRoleBinding")
-    + k8s.metadata("kube-proxy", "kube-system")
+  binding: k8s.resource("rbac.authorization.k8s.io/v1", "ClusterRoleBinding", "kube-proxy", "kube-system")
     + {
       roleRef: {
         apiGroup: "rbac.authorization.k8s.io",

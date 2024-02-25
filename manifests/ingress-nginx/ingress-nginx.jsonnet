@@ -154,14 +154,15 @@ local util = import "util.libsonnet";
     patch_failure_policy: "Fail",
   }),
 
-  ingress_class: k8s.resource("networking.k8s.io/v1", "IngressClass") + k8s.metadata("nginx", "") + {
+  ingress_class: k8s.resource("networking.k8s.io/v1", "IngressClass", "nginx", namespace="") + {
     spec: {controller: "k8s.io/ingress-nginx"},
   },
 
   webhook_config:
-    k8s.resource("admissionregistration.k8s.io/v1", "ValidatingWebhookConfiguration")
-    + k8s.metadata("ingress-nginx-admission", "")
-    + {
+    k8s.resource(
+      "admissionregistration.k8s.io/v1", "ValidatingWebhookConfiguration",
+      "ingress-nginx-admission", namespace="",
+    ) + {
       webhooks: [{
         name: "validate.nginx.ingress.kubernetes.io",
         clientConfig: {
