@@ -114,6 +114,10 @@ local util = import "util.libsonnet";
           port: 10254,
         },
       },
+      ports: [{
+        name: "prom",
+        containerPort: 10254,
+      }],
     }],
   }),
 
