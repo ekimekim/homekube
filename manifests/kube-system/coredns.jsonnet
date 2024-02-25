@@ -26,7 +26,7 @@ local k8s = import "k8s.libsonnet";
       # to the internal ingress-nginx controller.
       template IN ANY xenon.ekime.kim {
         match "^[^.]*\.xenon\.ekime\.kim\.$"
-        answer "{{ .Name }} 3600 IN CNAME nginx-internal-ingress-controller.ingress-nginx.svc.xenon.ekime.kim"
+        answer "{{ .Name }} 3600 IN CNAME nginx-internal-controller.ingress-nginx.svc.xenon.ekime.kim"
         fallthrough
       }
       # look up kubernetes-related dns names in kubernetes
