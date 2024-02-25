@@ -17,8 +17,8 @@ function(ingress_name) {
     ),
   },
 
-  local controller_name = "nginx-%s-controller" % ingress_name,
-  local admission_name = "nginx-%s-admission" % ingress_name,
+  local controller_name = "%s-controller" % ingress_name,
+  local admission_name = "%s-admission" % ingress_name,
 
   controller_auth: auth(
     controller_name,
