@@ -2,6 +2,8 @@
 NODES := charm
 SUDO := sudo # override this to "" if sudo not desired
 
+REPOSITORY := registry.xenon.ekime.kim
+
 .DELETE_ON_ERROR:
 .ONESHELL:
 SHELL = /bin/bash
@@ -11,7 +13,7 @@ SHELL = /bin/bash
 # As of writing, the only targets this generates that executing all install targets would not
 # is kubeconfigs/admin.kubeconfig and dependencies. That file can't easily be installed automatically.
 .PHONY: all
-all: keys kubeconfigs secrets manifests static-pods generated-files
+all: keys kubeconfigs secrets manifests static-pods generated-files images
 
 .PHONY: clean
 clean:
@@ -48,6 +50,21 @@ GENERATED_FILE_JSONNETS := $(wildcard generated-files/*.jsonnet)
 GENERATED_FILES := $(GENERATED_FILE_JSONNETS:.jsonnet=.yaml)
 .PHONY: generated-files
 generated-files: $(GENERATED_FILES)
+
+DOCKERFILES := $(wildcard images/*/Dockerfile)
+# Strip /Dockerfile from end. Use "images/IMAGE" as the target name to avoid colissions.
+IMAGES := $(DOCKERFILES:/Dockerfile=)
+.PHONY: images
+images: $(IMAGES)
+
+# For now just rebuild images every time and rely on docker's caching. This is unfortunately
+# slow but it's difficult to predicate Make on "anything in the folder changed".
+.PHONY: $(IMAGES)
+$(IMAGES):
+	IMAGE=$$(basename "$@")
+	TAG="$(REPOSITORY)/$$IMAGE:$$(git rev-parse HEAD)"
+	docker build -t "$$TAG" "$@"
+	docker push "$$TAG"
 
 # keys are made alongside certs
 %-key.pem: %.pem
