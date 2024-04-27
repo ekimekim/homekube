@@ -53,7 +53,15 @@ local k8s = import "k8s.libsonnet";
 
   service: k8s.service("registry", ports={ http: 80 }),
 
-  ingress: k8s.ingress("registry", tls=true, rules={
-    "registry.xenon.ekime.kim": {},
-  }),
+  ingress: k8s.ingress("registry",
+    annotations={
+      // Disable max body size, as image uploads
+      // are done by sending huge request bodies.
+      "nginx.ingress.kubernetes.io/proxy-body-size": "0",
+    },
+    tls=true,
+    rules={
+      "registry.xenon.ekime.kim": {},
+    },
+  ),
 }

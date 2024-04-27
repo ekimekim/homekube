@@ -3,13 +3,14 @@ local util = import "util.libsonnet";
   // Basic helper for specifying an api version, kind and metadata
   // Set namespace = null to omit entirely (which uses the default for your manifest).
   // Set namespace = "" to explicitly indicate "not namespaced".
-  resource(apiVersion, kind, name, namespace = null, labels = {}): {
+  resource(apiVersion, kind, name, namespace = null, labels = {}, annotations = {}): {
     apiVersion: apiVersion,
     kind: kind,
     metadata: {
       name: name,
       [if namespace != null then "namespace"]: namespace,
       labels: labels,
+      annotations: annotations,
     },
   },
 
@@ -221,7 +222,8 @@ local util = import "util.libsonnet";
     class = "nginx-internal",
     namespace = null,
     labels = { app: name },
-  ): $.resource("networking.k8s.io/v1", "Ingress", name, namespace, labels) + {
+    annotations = {},
+  ): $.resource("networking.k8s.io/v1", "Ingress", name, namespace, labels, annotations) + {
     metadata+: {
       annotations+: {
         [if tls == true then "cert-manager.io/cluster-issuer"]: "letsencrypt",
