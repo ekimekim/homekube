@@ -8,3 +8,4 @@ manifests/monitoring/dashboards.libsonnet
 manifests/namespaces.json
 # Ignore the above for the top-level files/ directory, where all files are included.
 !/files/**
+.pake-state
