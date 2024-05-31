@@ -5,6 +5,7 @@ from socket import gethostname
 NODES = ["charm"]
 REPOSITORY = "registry.xenon.ekime.kim"
 INSTALL_WITH_SUDO = True
+CONTEXT = "xenon"
 
 git = cmd("git")
 jsonnet = cmd("jsonnet")
