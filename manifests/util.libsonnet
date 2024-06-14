@@ -12,6 +12,15 @@
     for opt in std.objectFields(opts)
   ],
 
+  env_to_list(env): [
+    {name: item.key} +
+    if std.type(item.value) == "object" then
+      {valueFrom: item.value}
+    else
+      {value: std.toString(item.value)}
+    for item in std.objectKeysValues(env)
+  ],
+
   // Returns the singular element of a 1-element array, or else errors.
   unwrap_single(value):
     if std.length(value) == 1 then
