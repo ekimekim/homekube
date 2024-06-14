@@ -39,9 +39,10 @@ group("kubeconfigs", kubeconfigs)
 secrets = [path.replace(".sh", ".secret") for path in glob("secrets/*.sh")]
 group("secrets", secrets)
 
-# Manifests are handled by manifests/Makefile for now
-@always()
-def manifests(deps):
+# Manifests are handled by manifests/Makefile for now, which writes manifests/manifests.yaml.
+# This is a rare instance of a non-virtual always rule.
+@target("manifests/manifests.yaml", ["always"])
+def manifests(target, deps):
 	cmd("make").workdir("manifests/").run()
 
 static_pods = [path.replace(".jsonnet", ".yaml") for path in glob("static-pods/*.jsonnet")]
@@ -212,6 +213,6 @@ def install_api_server(deps):
 
 group("install_master", ["install_etcd", "install_api_server", "install_scheduler", "install_controller_manager"])
 
-@virtual(["manifests"])
+@virtual(["manifests/manifests.yaml"])
 def apply_manifests(deps):
 	cmd("kubectl", f"--context={CONTEXT}", "apply", "-f", "manifests/manifests.yaml", "--prune", "-l", "managed-by=homekube").run()
