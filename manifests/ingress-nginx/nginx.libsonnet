@@ -1,6 +1,6 @@
 local k8s = import "k8s.libsonnet";
 local util = import "util.libsonnet";
-function(ingress_name) {
+function(ingress_name, httpHostPort=false) {
   // Creates an account NAME and binds it to a role NAME *and* a cluster role NAME.
   local auth(name, rules, cluster_rules) = {
     service_account: k8s.service_account(name),
@@ -119,10 +119,17 @@ function(ingress_name) {
           port: 10254,
         },
       },
-      ports: [{
-        name: "prom",
-        containerPort: 10254,
-      }],
+      ports: [
+        {
+          name: "prom",
+          containerPort: 10254,
+        },
+        {
+          name: "http",
+          containerPort: 80,
+          [if httpHostPort then "hostPort"]: 80,
+        },
+      ],
     }],
   }),
 
