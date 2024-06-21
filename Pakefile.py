@@ -11,6 +11,9 @@ git = cmd("git")
 jsonnet = cmd("jsonnet")
 docker = cmd("docker")
 
+
+### General targets ###
+
 # The default target should generate all files (ie. execute all non-install targets).
 # As of writing, the only targets this generates that executing all install targets would not
 # is kubeconfigs/admin.kubeconfig and dependencies. That file can't easily be installed automatically.
@@ -28,43 +31,17 @@ group("default", [
 def clean(deps):
 	git("clean", "-fX").run()
 
+
+### CA and cluster certificates ###
+
 keys = [path.replace("-csr.json", ".pem") for path in glob("ca/*-csr.json")]
 keys += [f"ca/nodes/{node}.pem" for node in NODES]
 group("keys", keys)
 
-kubeconfigs = [path.replace(".jsonnet", ".kubeconfig") for path in glob("kubeconfigs/*.jsonnet")]
-kubeconfigs += [f"kubeconfigs/nodes/{node}.kubeconfig" for node in NODES]
-group("kubeconfigs", kubeconfigs)
-
-secrets = [path.replace(".sh", ".secret") for path in glob("secrets/*.sh")]
-group("secrets", secrets)
-
-# Manifests are handled by manifests/Makefile for now, which writes manifests/manifests.yaml.
-# This is a rare instance of a non-virtual always rule.
-@target("manifests/manifests.yaml", ["always"])
-def manifests(target, deps):
-	cmd("make").workdir("manifests/").run()
-
-static_pods = [path.replace(".jsonnet", ".yaml") for path in glob("static-pods/*.jsonnet")]
-group("static_pods", static_pods)
-
-generated_files = [path.replace(".jsonnet", ".yaml") for path in glob("generated-files/*.jsonnet")]
-group("generated_files", generated_files)
-
-# Use "images/IMAGE" as the target name (instead of just IMAGE) to avoid colissions.
-images = glob("images/*")
-group("images", images)
-
-# For now just rebuild images every time and rely on docker's caching.
-# TODO fix this now that we aren't limited to Make's issues
-for image in images:
-	@always(name=image)
-	def build_image(deps):
-		name = os.path.basename(image)
-		commit = git("rev-parse", "HEAD").get_output()
-		tag = f"{REPOSITORY}/{name}:{commit}"
-		docker("build", "-t", tag, image)
-		docker("push", tag)
+# generate node CSRs
+@pattern(r"ca/nodes/(.*)-csr\.json", ["ca/nodes/generate-csr"])
+def node_csr(target, deps, match):
+	cmd("ca/nodes/generate-csr", match.group(1)).stdout(target).run()
 
 # Keys are made as a side effect of certs, so depend on certs with a do-nothing recipe.
 # This could cause failures if the key is changed/deleted on disk but not the pem, but
@@ -98,10 +75,12 @@ def cert(target, deps, match):
 	).json()
 	write_cert(match.group(1), data)
 
-# generate node CSRs
-@pattern(r"ca/nodes/(.*)-csr\.json", ["ca/nodes/generate-csr"])
-def node_csr(target, deps, match):
-	cmd("ca/nodes/generate-csr", match.group(1)).stdout(target).run()
+
+### Kubeconfigs ###
+
+kubeconfigs = [path.replace(".jsonnet", ".kubeconfig") for path in glob("kubeconfigs/*.jsonnet")]
+kubeconfigs += [f"kubeconfigs/nodes/{node}.kubeconfig" for node in NODES]
+group("kubeconfigs", kubeconfigs)
 
 # generate node kubeconfigs. must be before general kubeconfigs to avoid the wrong one matching.
 @pattern(r"kubeconfigs/nodes/(.*)\.kubeconfig", [
@@ -129,11 +108,29 @@ def kubeconfig(target, deps, match):
 	input, *_ = deps
 	jsonnet(input).stdout(target).run()
 
+
+### Other cluster config ###
+
+secrets = [path.replace(".sh", ".secret") for path in glob("secrets/*.sh")]
+group("secrets", secrets)
+
 # generate secrets from scripts
 @pattern(r"secrets/(.*)\.secret", [r"secrets/\1.sh"])
 def secret(target, deps, match):
 	input, = deps
 	cmd("bash", input).stdout(target).run()
+
+generated_files = [path.replace(".jsonnet", ".yaml") for path in glob("generated-files/*.jsonnet")]
+group("generated_files", generated_files)
+
+# generated yaml files
+@pattern(r"generated-files/(.*)\.yaml", [r"generated-files/\1.jsonnet"] + secrets)
+def generated_file(target, deps, match):
+	input, *_ = deps
+	jsonnet(input).stdout(target).run()
+
+static_pods = [path.replace(".jsonnet", ".yaml") for path in glob("static-pods/*.jsonnet")]
+group("static_pods", static_pods)
 
 # static pod manifests
 @pattern(r"static-pods/(.*)\.yaml", [r"static-pods/\1.jsonnet"])
@@ -141,11 +138,39 @@ def static_pod(target, deps, match):
 	input, = deps
 	jsonnet(input).stdout(target).run()
 
-# generated yaml files
-@pattern(r"generated-files/(.*)\.yaml", [r"generated-files/\1.jsonnet"] + secrets)
-def generated_file(target, deps, match):
-	input, *_ = deps
-	jsonnet(input).stdout(target).run()
+
+### Docker images ###
+
+# Use "images/IMAGE" as the target name (instead of just IMAGE) to avoid colissions.
+images = glob("images/*")
+group("images", images)
+
+# For now just rebuild images every time and rely on docker's caching.
+# TODO fix this now that we aren't limited to Make's issues
+for image in images:
+	@always(name=image)
+	def build_image(deps):
+		name = os.path.basename(image)
+		commit = git("rev-parse", "HEAD").get_output()
+		tag = f"{REPOSITORY}/{name}:{commit}"
+		docker("build", "-t", tag, image)
+		docker("push", tag)
+
+
+### Manifests ###
+
+# Manifests are handled by manifests/Makefile for now, which writes manifests/manifests.yaml.
+# This is a rare instance of a non-virtual always rule.
+@target("manifests/manifests.yaml", ["always"])
+def manifests(target, deps):
+	cmd("make").workdir("manifests/").run()
+
+@virtual(["manifests/manifests.yaml"])
+def apply_manifests(deps):
+	cmd("kubectl", f"--context={CONTEXT}", "apply", "-f", "manifests/manifests.yaml", "--prune", "-l", "managed-by=homekube").run()
+
+
+### Node installation ###
 
 def install(mode, *args):
 	install = (sudo if INSTALL_WITH_SUDO else cmd)("install", "--mode", f"{mode:03o}", *args).run()
@@ -212,7 +237,3 @@ def install_api_server(deps):
 	install(0o644, "static-pods/api-server.yaml", "/etc/kubernetes/manifests/")
 
 group("install_master", ["install_etcd", "install_api_server", "install_scheduler", "install_controller_manager"])
-
-@virtual(["manifests/manifests.yaml"])
-def apply_manifests(deps):
-	cmd("kubectl", f"--context={CONTEXT}", "apply", "-f", "manifests/manifests.yaml", "--prune", "-l", "managed-by=homekube").run()
