@@ -12,8 +12,6 @@ jsonnet = cmd("jsonnet")
 docker = cmd("docker")
 
 
-### General targets ###
-
 # The default target should generate all files (ie. execute all non-install targets).
 # As of writing, the only targets this generates that executing all install targets would not
 # is kubeconfigs/admin.kubeconfig and dependencies. That file can't easily be installed automatically.
@@ -26,10 +24,6 @@ group("default", [
 	"generated_files",
 	"images",
 ])
-
-@always()
-def clean(deps):
-	git("clean", "-fX").run()
 
 
 ### CA and cluster certificates ###
