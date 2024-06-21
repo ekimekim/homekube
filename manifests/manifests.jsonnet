@@ -17,10 +17,16 @@ local flatten(value) =
   ;
 
 // Top-level function, this file is expected to be called with the contents of a manifest file.
-// Path is expected to be "manifests/*.jsonnet" or "manifests/NAMESPACE/**.jsonnet"
+// Path is expected to be "manifests/*.jsonnet" or "manifests/NAMESPACE/*.jsonnet"
 function(path, value)
   local path_parts = std.split(path, "/");
-  local namespace = if std.length(path_parts) > 1 then path_parts[0] else "";
+  local namespace =
+    if std.length(path_parts) <= 1 || std.length(path_parts) > 3 || path_parts[0] != "manifests" then
+      error "Unexpected path: %s" % path
+    else if std.length(path_parts) == 2 then
+      ""
+    else
+      path_parts[1];
   [
     // We want to merge metadata, but can't rely on manifest.metadata being set to merge.
     // We want to do so in a way that their namespace value overrides ours, so we can't just

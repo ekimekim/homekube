@@ -153,11 +153,107 @@ for image in images:
 
 ### Manifests ###
 
-# Manifests are handled by manifests/Makefile for now, which writes manifests/manifests.yaml.
-# This is a rare instance of a non-virtual always rule.
-@target("manifests/manifests.yaml", ["always"])
-def manifests(target, deps):
-	cmd("make").workdir("manifests/").run()
+# *.jsonnet and */*.jsonnet, except manifests.jsonnet
+manifest_yamls = [
+	path.replace(".jsonnet", ".yaml")
+	for path in glob("manifests/*.jsonnet") + glob("manifests/*/*.jsonnet")
+	if path != "manifests/manifests.jsonnet"
+]
+
+# Directories which will have all .jsonnet files within them imported into a generated libsonnet
+# of the same name.
+GENERATE_DIRS = ["manifests/monitoring/dashboards"]
+generate_libsonnets = []
+for dir in GENERATE_DIRS:
+	libsonnet = f"{dir}.libsonnet"
+	generate_libsonnets.append(libsonnet)
+
+	# Generate a libsonnet for the directory. Depending on a directory means we invalidate
+	# whenever the file listing changes.
+	@target(libsonnet, [dir])
+	def generate_libsonnet(target, deps):
+		lines = ["{"]
+		for filename in sorted(os.listdir(dir)):
+			if not filename.endswith(".jsonnet"):
+				continue
+			name, _ = os.path.splitext(filename)
+			rel_path = f"{os.path.basename(dir)}/{filename}"
+			lines.append(f"  {json.dumps(name)}: import {json.dumps(rel_path)},")
+		lines.append("}")
+		write(target, "\n".join(lines))
+
+# namespaces.json is used by namespaces.jsonnet to create a namespace for each folder in manifests.
+# Note we're depending on "./manifests" to avoid conflicts with the virtual target "manifests".
+@target("manifests/namespaces.json", ["./manifests"])
+def namespaces_json(target, deps):
+	dirs = [
+		filename for filename in sorted(os.listdir("manifests"))
+		if os.path.isdir(os.path.join("manifests", filename))
+	]
+	write(target, json.dumps(dirs))
+
+# Wrap the following block in a function to force a new scope each loop
+def generate_manifest_targets(yaml):
+	name, _ = os.path.splitext(yaml)
+	jsonnet_file = f"{name}.jsonnet"
+
+	# This target determines dependencies for the given yaml file.
+	# The dependencies for the yaml file should be:
+	# - The input jsonnet file itself
+	# - The libsonnet files that file imports (and that those import, recursively)
+	# Note this includes libsonnet files generated from dirs (see above), so they need to be up to date
+	# before this target runs. But we don't want them changing to invalidate us (except when otherwise listed,
+	# see below). So we explicitly call for an update of them during our recipe.
+	# This target should also be cached, but should be invalidated when:
+	# - The input jsonnet changes
+	# - Any of the files it previously depended on changes (as this may introduce more files)
+	# (this is the same set of dependencies as the yaml file itself)
+	# This puts us in a slightly awkward position of this target depending on files based on its cached result.
+	# Thankfully this is possible to query directly from the registry.
+	deps_target = f"manifest_deps:{name}"
+	prev_deps = registry.get_result(deps_target)
+	if prev_deps is None:
+		prev_deps = []
+
+	@virtual(name=deps_target, deps=prev_deps)
+	def get_manifest_deps(_deps):
+		# See above, these libsonnets should be up to date before we run
+		# (but shouldn't invalidate us, so they're not a real dependency)
+		for libsonnet in generate_libsonnets:
+			registry.update(libsonnet)
+		# jsonnet_dep_graph scans the given jsonnet file and outputs all recursively-imported
+		# files (including the starting jsonnet file itself) in format:
+		#   INPUT_FILE: FILE FILE FILE
+		output = cmd("jsonnet_dep_graph", "--jpath", "manifests", jsonnet_file).get_output()
+		return sorted(output.strip().split()[1:])
+
+	# Run the above target to get up-to-date deps
+	jsonnet_deps = registry.update(deps_target)
+
+	# Now define the actual target to build the yaml file
+	@target(yaml, jsonnet_deps + ["manifests/manifests.jsonnet"])
+	def generate_manifest(target, deps):
+		# manifests.jsonnet defines a top-level function that takes the filename and file contents
+		# as arguments.
+		jsonnet(
+			"--jpath", "manifests",
+			"--yaml-stream",
+			"manifests/manifests.jsonnet",
+			"--tla-str", f"path={jsonnet_file}",
+			"--tla-code", f"value=import {json.dumps(jsonnet_file)}",
+		).stdout(target).run()
+
+for yaml in manifest_yamls:
+	generate_manifest_targets(yaml)
+
+# Full yaml file, which is simply all the yamls concatenated.
+# This is a relatively trivial transform, but is useful to exist as a file
+# for diff purposes.
+@target("manifests/manifests.yaml", manifest_yamls)
+def concat_manifests(target, deps):
+	cmd("cat", *deps).stdout(target).run()
+
+alias("manifests", "manifests/manifests.yaml")
 
 @virtual(["manifests/manifests.yaml"])
 def apply_manifests(deps):
