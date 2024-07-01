@@ -82,6 +82,12 @@ Panel:
       Known keys to work in properties map:
         "custom.transform": "negative-Y"
           Displays the series negated on the graph, without negating the value in the legend etc.
+        "custom.stacking": {mode: "none", group: "A"}
+          Disable stacking for matching series
+        "custom.lineStyle": {fill: "dash", dash: [10, 10]}
+          Make it a dashed line
+        "custom.fillOpacity": 0
+          Set fill opacity percentage from 0 to 100
   Options for custom panels:
     custom: Required. An opaque object that will be merged into the panel JSON.
 

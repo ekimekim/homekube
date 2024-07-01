@@ -38,8 +38,15 @@ grafana.dashboard({
     },
   ],
   local filters = {
-    pod: 'pod!="", pod=~"$pod_regex", node=~"$node", namespace=~"$namespace", pod=~"$pod"',
-    container: '%s, container!="", container=~"$container"' % self.pod,
+    // kube-state-metrics don't label with node
+    kube_state_pod: 'namespace=~"$namespace", pod!="", pod=~"$pod_regex", pod=~"$pod"',
+    kube_state_container: '%s, container!="", container=~"$container"' % self.kube_state_pod,
+    pod: '%s, node=~"$node"' % self.kube_state_pod,
+    container: '%s, node=~"$node"' % self.kube_state_container,
+    // this "and ..." filter expression will restrict to pods with the correct node,
+    // though without the node label in the result.
+    // It should be used along with the kube_state_* filters.
+    and_with_node: 'and on (uid) kube_pod_info{%s}' % self.pod
   },
   rows: [
     // Top-line usage metrics: CPU and memory
@@ -134,9 +141,27 @@ grafana.dashboard({
           stack: true,
         },
         series: {
-          user: "sum(rate(container_cpu_user_seconds_total{%s}[1m]))",
-          system: "sum(rate(container_cpu_system_seconds_total{%s}[1m]))",
-          // TODO requires kube-state-metrics
+          user: "sum(rate(container_cpu_user_seconds_total{%s}[1m]))" % filters.container,
+          system: "sum(rate(container_cpu_system_seconds_total{%s}[1m]))" % filters.container,
+          request: |||
+            min(
+              kube_pod_container_resource_requests{%(kube_state_container)s, resource="cpu"}
+              %(and_with_node)s
+            )
+          ||| % filters,
+          limit: |||
+            min(
+              kube_pod_container_resource_limits{%(kube_state_container)s, resource="cpu"}
+              %(and_with_node)s
+            )
+          ||| % filters,
+        },
+        overrides: {
+          "request|limit": {
+            "custom.stacking": {mode: "none", group: "A"},
+            "custom.lineStyle": {fill: "dash", dash: [10, 10]},
+            "custom.fillOpacity": 0,
+          }
         },
       },
       // CPU into system, user, request, limit
