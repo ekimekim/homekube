@@ -73,6 +73,7 @@ function(ingress_name, httpHostPort=false) {
 
   config: k8s.configmap(controller_name, data={
     // Global ingress options. (barely) documented here: https://github.com/kubernetes/ingress-nginx/blob/main/internal/ingress/controller/config/config.go
+    hsts: "false",
   }),
 
   controller: k8s.deployment(controller_name, pod={
