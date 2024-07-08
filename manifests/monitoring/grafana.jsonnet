@@ -4,14 +4,23 @@ local grafana = import "grafana.libsonnet";
   configmap: k8s.configmap("grafana", data = {
     "grafana.ini": std.manifestIni({
       sections: {
+        server: {
+          http_port: 80,
+        },
+        // Log to stderr as JSON
+        log: {
+          mode: "console",
+        },
+        "log.console": {
+          format: "json",
+        },
+        // Turn off phone home / marketing malware
         analytics: {
           enabled: false,
           reporting_enabled: false,
           check_for_updates: false,
         },
-        server: {
-          http_port: 80,
-        },
+        news: { news_feed_enabled: false },
       },
     }),
     "datasources.yaml": std.manifestJson({
@@ -123,6 +132,10 @@ local grafana = import "grafana.libsonnet";
           // Avoid fs permission issues by running as root
           runAsUser: 0,
         },
+        ports: [{
+          name: "prom",
+          containerPort: 80,
+        }],
       }],
     } + k8s.mixins.host_path("data", "charm", "/srv/grafana"),
   ) + k8s.mixins.run_one,
