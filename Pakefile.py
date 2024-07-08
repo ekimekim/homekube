@@ -10,6 +10,7 @@ CONTEXT = "xenon"
 git = cmd("git")
 jsonnet = cmd("jsonnet")
 docker = cmd("docker")
+kubectl = cmd("kubectl", f"--context={CONTEXT}")
 
 
 # The default target should generate all files (ie. execute all non-install targets).
@@ -255,9 +256,19 @@ def concat_manifests(target, deps):
 
 alias("manifests", "manifests/manifests.yaml")
 
+@always(["manifests/manifests.yaml"])
+def diff_manifests(deps):
+	result = (
+		kubectl("diff", "-f", "manifests/manifests.yaml", "-l", "managed-by=homekube")
+		.env(KUBECTL_EXTERNAL_DIFF="diff -u --color=always")
+		.run(error_on_failure=False)
+	)
+	if result.returncode > 1:
+		result.check_returncode() # raise
+
 @virtual(["manifests/manifests.yaml"])
 def apply_manifests(deps):
-	cmd("kubectl", f"--context={CONTEXT}", "apply", "-f", "manifests/manifests.yaml", "--prune", "-l", "managed-by=homekube").run()
+	kubectl("apply", "-f", "manifests/manifests.yaml", "--prune", "-l", "managed-by=homekube").run()
 
 
 ### Node installation ###
