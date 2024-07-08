@@ -83,6 +83,10 @@ local grafana = import "grafana.libsonnet";
 
   service: k8s.service("grafana", ports = { http: 80 }),
 
+  ingress: k8s.ingress("grafana", tls=true, rules={
+    "grafana.xenon.ekime.kim": {},
+  }),
+
   deployment: k8s.deployment("grafana",
     pod = {
       volumes: [
