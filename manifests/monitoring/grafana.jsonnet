@@ -9,6 +9,9 @@ local grafana = import "grafana.libsonnet";
           reporting_enabled: false,
           check_for_updates: false,
         },
+        server: {
+          http_port: 80,
+        },
       },
     }),
     "datasources.yaml": std.manifestJson({
@@ -69,9 +72,7 @@ local grafana = import "grafana.libsonnet";
     for item in std.objectKeysValues(import "dashboards.libsonnet")
   }),
 
-  service: k8s.service("grafana", ports = {
-    http: { port: 80, targetPort: 3000 }, // TODO change grafana's listen port
-  }),
+  service: k8s.service("grafana", ports = { http: 80 }),
 
   deployment: k8s.deployment("grafana",
     pod = {
